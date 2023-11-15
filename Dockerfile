@@ -22,7 +22,7 @@ ENV PATH="/home/${NB_USER}/.local/bin:${PATH}"
 FROM base as python-deps
 # COPY requirements/dev.txt requirements-dev.txt
 COPY requirements/base.txt requirements-base.txt
-RUN python3.10 -m pip install pip==${PIP_VERSION} \
+RUN python3.10 -m pip install pip==23.3.1 \
   && dnf -y groupinstall "Development Tools" \
   && su -l ${NB_USER} -c 'pip3.10 install  --no-cache  -r requirements-base.txt' \
   && dnf -y groupremove "Development Tools" \
