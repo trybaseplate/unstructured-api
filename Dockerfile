@@ -38,11 +38,17 @@ RUN python3.10 -c "import nltk; nltk.download('punkt')" && \
   python3.10 -c "from unstructured.ingest.pipeline.initialize import initialize; initialize()"
 
 FROM model-deps as code
-COPY --chown=${NB_USER}:${NB_USER} CHANGELOG.md CHANGELOG.md
-COPY --chown=${NB_USER}:${NB_USER} logger_config.yaml logger_config.yaml
-COPY --chown=${NB_USER}:${NB_USER} prepline_${PIPELINE_PACKAGE}/ prepline_${PIPELINE_PACKAGE}/
-COPY --chown=${NB_USER}:${NB_USER} exploration-notebooks exploration-notebooks
-COPY --chown=${NB_USER}:${NB_USER} scripts/app-start.sh scripts/app-start.sh
+COPY CHANGELOG.md CHANGELOG.md
+COPY logger_config.yaml logger_config.yaml
+COPY prepline_${PIPELINE_PACKAGE}/ prepline_${PIPELINE_PACKAGE}/
+COPY exploration-notebooks exploration-notebooks
+COPY scripts/app-start.sh scripts/app-start.sh
+
+# COPY --chown=${NB_USER}:${NB_USER} CHANGELOG.md CHANGELOG.md
+# COPY --chown=${NB_USER}:${NB_USER} logger_config.yaml logger_config.yaml
+# COPY --chown=${NB_USER}:${NB_USER} prepline_${PIPELINE_PACKAGE}/ prepline_${PIPELINE_PACKAGE}/
+# COPY --chown=${NB_USER}:${NB_USER} exploration-notebooks exploration-notebooks
+# COPY --chown=${NB_USER}:${NB_USER} scripts/app-start.sh scripts/app-start.sh
 
 ENTRYPOINT ["scripts/app-start.sh"]
 # Expose a default port of 8000. Note: The EXPOSE instruction does not actually publish the port,
