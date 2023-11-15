@@ -40,7 +40,7 @@ RUN python3.10 -c "import nltk; nltk.download('punkt')" && \
 FROM model-deps as code
 COPY CHANGELOG.md CHANGELOG.md
 COPY logger_config.yaml logger_config.yaml
-COPY prepline_${PIPELINE_PACKAGE}/ prepline_${PIPELINE_PACKAGE}/
+COPY prepline_general/ prepline_general/
 COPY exploration-notebooks exploration-notebooks
 COPY scripts/app-start.sh scripts/app-start.sh
 
