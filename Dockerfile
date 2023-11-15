@@ -5,7 +5,7 @@ FROM quay.io/unstructured-io/base-images:rocky9.2-8@sha256:68b11677eab35ea702cfa
 #             https://mybinder.readthedocs.io/en/latest/tutorials/dockerfile.html
 ARG NB_USER=notebook-user
 ARG NB_UID=1000
-ARG PIP_VERSION
+ARG PIP_VERSION=21.3.1
 ARG PIPELINE_PACKAGE
 
 # Set up environment
