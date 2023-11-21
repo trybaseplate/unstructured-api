@@ -658,6 +658,14 @@ def pipeline_1(
     new_after_n_chars: List[str] = Form(default=[]),
     max_characters: List[str] = Form(default=[]),
 ):
+    auth_token = os.environ.get("AUTH")
+    auth_header = request.headers.get("Authorization")
+    if auth_header != auth_token:
+        raise HTTPException(
+                    detail="UnAuthorized",
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    )
+    
     if files:
         for file_index in range(len(files)):
             if files[file_index].content_type == "application/gzip":
