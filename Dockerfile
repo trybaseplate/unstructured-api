@@ -45,7 +45,7 @@ USER ${NB_USER}
 
 # FROM python-deps as model-deps
 RUN python3.10 -c "import nltk; nltk.download('punkt')" && \
-  python3.10 -c "import nltk; nltk.download('averaged_perceptron_tagger')" 
+  python3.10 -c "import nltk; nltk.download('averaged_perceptron_tagger')"
 # python3.10 -c "from unstructured.partition.model_init import initialize; initialize()"
 
 # FROM model-deps as code
