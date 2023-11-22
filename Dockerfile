@@ -28,10 +28,10 @@ COPY --chown=${NB_USER}:${NB_USER} requirements/base.txt requirements-base.txt
 RUN python3.10 -m pip install pip==22.2.1 \
   && dnf -y groupinstall "Development Tools" \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache  -r requirements-base.txt' \ 
-  && su -l ${NB_USER} -c 'pip3.10 uninstall --no-cache onnxruntime -y' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.15' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
+  # && su -l ${NB_USER} -c 'pip3.10 uninstall --no-cache onnxruntime -y' \
+  # && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.15' \
+  # && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu' \
+  # && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
   && dnf -y groupremove "Development Tools" \
   && dnf clean all \
   && ln -s /home/notebook-user/.local/bin/pip3.10 /usr/local/bin/pip3.10 || true
