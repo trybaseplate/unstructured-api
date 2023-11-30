@@ -19,9 +19,15 @@ WORKDIR ${HOME}
 RUN echo $NB_USER
 RUN echo $NB_UID
 
+# NOTE(crag): NB_USER ARG for mybinder.org compat:
+#             https://mybinder.readthedocs.io/en/latest/tutorials/dockerfile.html
+RUN echo $NB_USER
+RUN echo $NB_UID
+
 ENV PYTHONPATH="${PYTHONPATH}:${HOME}"
 ENV PATH="/home/${NB_USER}/.local/bin:${PATH}"
 
+# FROM base as python-deps
 # FROM base as python-deps
 # COPY requirements/dev.txt requirements-dev.txt
 COPY --chown=${NB_USER}:${NB_USER} requirements/base.txt requirements-base.txt
