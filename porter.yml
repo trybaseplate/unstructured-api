@@ -1,0 +1,36 @@
+version: v2
+name: unstructured-api
+services:
+- name: unstructured-api
+  run: ""
+  type: web
+  instances: 1
+  cpuCores: 1.5
+  ramMegabytes: 3200
+  gpu:
+    enabled: true
+    gpuCoresNvidia: 1
+  terminationGracePeriodSeconds: 30
+  port: 8000
+  autoscaling:
+    enabled: true
+    minInstances: 1
+    maxInstances: 50
+    cpuThresholdPercent: 50
+    memoryThresholdPercent: 50
+  domains:
+  - name: unstructured-api-86effc1e79be1d31.onporter.run
+  healthCheck:
+    enabled: true
+    httpPath: /healthcheck
+  ingressAnnotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 50m
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: '"300"'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '"300"'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '"300"'
+build:
+  context: ./
+  method: docker
+  dockerfile: ./Dockerfile
+env:
+  UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB: "256"
