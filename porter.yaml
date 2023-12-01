@@ -8,8 +8,8 @@ services:
   cpuCores: 1.5
   ramMegabytes: 3200
   gpu:
-    enabled: true
-    gpuCoresNvidia: 1
+    enabled: false
+    gpuCoresNvidia: 0
   terminationGracePeriodSeconds: 30
   port: 8000
   autoscaling:
