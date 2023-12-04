@@ -8,14 +8,14 @@ services:
   cpuCores: 1.5
   ramMegabytes: 3200
   gpu:
-    enabled: false
-    gpuCoresNvidia: 0
+    enabled: true
+    gpuCoresNvidia: 1
   terminationGracePeriodSeconds: 30
   port: 8000
   autoscaling:
     enabled: true
     minInstances: 1
-    maxInstances: 50
+    maxInstances: 20
     cpuThresholdPercent: 50
     memoryThresholdPercent: 50
   domains:
