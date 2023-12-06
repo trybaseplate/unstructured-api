@@ -7,9 +7,6 @@ services:
   instances: 1
   cpuCores: 1.5
   ramMegabytes: 3200
-  gpu:
-    enabled: true
-    gpuCoresNvidia: 1
   terminationGracePeriodSeconds: 30
   port: 8000
   autoscaling:
