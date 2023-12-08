@@ -5,14 +5,14 @@ services:
   run: ""
   type: web
   instances: 1
-  cpuCores: 1.5
-  ramMegabytes: 3200
+  cpuCores: 1
+  ramMegabytes: 2400
   terminationGracePeriodSeconds: 30
   port: 8000
   autoscaling:
     enabled: true
     minInstances: 1
-    maxInstances: 20
+    maxInstances: 10
     cpuThresholdPercent: 50
     memoryThresholdPercent: 50
   domains:
