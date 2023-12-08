@@ -7,6 +7,9 @@ jobs:
   porter-deploy:
     runs-on: ubuntu-latest
     steps:
+    # See https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
+    - name: Delete huge unnecessary tools folder
+      run: rm -rf /opt/hostedtoolcache
     - name: Checkout code
       uses: actions/checkout@v3
     - name: Set Github tag
