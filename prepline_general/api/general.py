@@ -47,6 +47,7 @@ from unstructured.staging.base import (
     elements_from_json,
 )
 from unstructured_inference.models.chipper import MODEL_TYPES as CHIPPER_MODEL_TYPES
+import tempfile
 
 
 app = FastAPI()
@@ -270,6 +271,7 @@ def pipeline_api(
     m_combine_under_n_chars=[],
     m_new_after_n_chars=[],
     m_max_characters=[],
+    m_pdf_extract_images=[],
 ):
     if filename.endswith(".msg"):
         # Note(yuming): convert file type for msg files
@@ -302,6 +304,7 @@ def pipeline_api(
                         "m_combine_under_n_chars": m_combine_under_n_chars,
                         "new_after_n_chars": m_new_after_n_chars,
                         "m_max_characters": m_max_characters,
+                        "m_pdf_extract_images": m_pdf_extract_images,
                     },
                     default=str,
                 )
@@ -314,6 +317,11 @@ def pipeline_api(
 
     if file_content_type == "application/pdf":
         pdf = _check_pdf(file)
+
+    pdf_extract_images_str = (
+        m_pdf_extract_images[0] if len(m_pdf_extract_images) else "false"
+    ).lower()
+    pdf_extract_images = pdf_extract_images_str == "true"
 
     show_coordinates_str = (m_coordinates[0] if len(m_coordinates) else "false").lower()
     show_coordinates = show_coordinates_str == "true"
@@ -366,128 +374,139 @@ def pipeline_api(
         int(m_max_characters[0]) if m_max_characters and m_max_characters[0].isdigit() else 1500
     )
 
-    try:
-        logger.debug(
-            "partition input data: {}".format(
-                json.dumps(
-                    {
-                        "content_type": file_content_type,
-                        "strategy": strategy,
-                        "ocr_languages": ocr_languages,
-                        "coordinates": show_coordinates,
-                        "pdf_infer_table_structure": pdf_infer_table_structure,
-                        "include_page_breaks": include_page_breaks,
-                        "encoding": encoding,
-                        "model_name": hi_res_model_name,
-                        "xml_keep_tags": xml_keep_tags,
-                        "skip_infer_table_types": skip_infer_table_types,
-                        "languages": languages,
-                        "chunking_strategy": chunking_strategy,
-                        "multipage_sections": multipage_sections,
-                        "combine_under_n_chars": combine_under_n_chars,
-                        "new_after_n_chars": new_after_n_chars,
-                        "max_characters": max_characters,
-                    },
-                    default=str,
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        try:
+            logger.debug(
+                "partition input data: {}".format(
+                    json.dumps(
+                        {
+                            "content_type": file_content_type,
+                            "strategy": strategy,
+                            "ocr_languages": ocr_languages,
+                            "coordinates": show_coordinates,
+                            "pdf_infer_table_structure": pdf_infer_table_structure,
+                            "include_page_breaks": include_page_breaks,
+                            "encoding": encoding,
+                            "model_name": hi_res_model_name,
+                            "xml_keep_tags": xml_keep_tags,
+                            "skip_infer_table_types": skip_infer_table_types,
+                            "languages": languages,
+                            "chunking_strategy": chunking_strategy,
+                            "multipage_sections": multipage_sections,
+                            "combine_under_n_chars": combine_under_n_chars,
+                            "new_after_n_chars": new_after_n_chars,
+                            "max_characters": max_characters,
+                            "pdf_extract_images": pdf_extract_images,
+                            "pdf_image_output_dir_path": temp_dir
+                        },
+                        default=str,
+                    )
                 )
             )
-        )
 
-        partition_kwargs = {
-            "file": file,
-            "metadata_filename": filename,
-            "content_type": file_content_type,
-            "encoding": encoding,
-            "include_page_breaks": include_page_breaks,
-            "model_name": hi_res_model_name,
-            "ocr_languages": ocr_languages,
-            "pdf_infer_table_structure": pdf_infer_table_structure,
-            "skip_infer_table_types": skip_infer_table_types,
-            "strategy": strategy,
-            "xml_keep_tags": xml_keep_tags,
-            "languages": languages,
-            "chunking_strategy": chunking_strategy,
-            "multipage_sections": multipage_sections,
-            "combine_under_n_chars": combine_under_n_chars,
-            "new_after_n_chars": new_after_n_chars,
-            "max_characters": max_characters,
-        }
+            partition_kwargs = {
+                "file": file,
+                "metadata_filename": filename,
+                "content_type": file_content_type,
+                "encoding": encoding,
+                "include_page_breaks": include_page_breaks,
+                "model_name": hi_res_model_name,
+                "ocr_languages": ocr_languages,
+                "pdf_infer_table_structure": pdf_infer_table_structure,
+                "skip_infer_table_types": skip_infer_table_types,
+                "strategy": strategy,
+                "xml_keep_tags": xml_keep_tags,
+                "languages": languages,
+                "chunking_strategy": chunking_strategy,
+                "multipage_sections": multipage_sections,
+                "combine_under_n_chars": combine_under_n_chars,
+                "new_after_n_chars": new_after_n_chars,
+                "max_characters": max_characters,
+                "pdf_extract_images": pdf_extract_images,
+                "pdf_image_output_dir_path": temp_dir
+            }
 
-        if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
-            # Be careful of naming differences in api params vs partition params!
-            # These kwargs are going back into the api, not into partition
-            # They need to be switched back in partition_pdf_splits
-            if partition_kwargs.get("model_name"):
-                partition_kwargs["hi_res_model_name"] = partition_kwargs.pop("model_name")
+            if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
+                # Be careful of naming differences in api params vs partition params!
+                # These kwargs are going back into the api, not into partition
+                # They need to be switched back in partition_pdf_splits
+                if partition_kwargs.get("model_name"):
+                    partition_kwargs["hi_res_model_name"] = partition_kwargs.pop("model_name")
 
-            elements = partition_pdf_splits(
-                request=request,
-                pdf_pages=pdf.pages,
-                coordinates=show_coordinates,
-                **partition_kwargs,
-            )
-        elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
-            with ChipperMemoryProtection():
+                elements = partition_pdf_splits(
+                    request=request,
+                    pdf_pages=pdf.pages,
+                    coordinates=show_coordinates,
+                    **partition_kwargs,
+                )
+            elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
+                with ChipperMemoryProtection():
+                    elements = partition(**partition_kwargs)
+            else:
                 elements = partition(**partition_kwargs)
-        else:
-            elements = partition(**partition_kwargs)
 
-    except OSError as e:
-        if (
-            "chipper-fast-fine-tuning is not a local folder" in e.args[0]
-            or "ved-fine-tuning is not a local folder" in e.args[0]
-        ):
+        except OSError as e:
+            if (
+                "chipper-fast-fine-tuning is not a local folder" in e.args[0]
+                or "ved-fine-tuning is not a local folder" in e.args[0]
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
+                )
+
+            raise e
+        except ValueError as e:
+            if "Invalid file" in e.args[0]:
+                raise HTTPException(
+                    status_code=400, detail=f"{file_content_type} not currently supported"
+                )
+            if "Unstructured schema" in e.args[0]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Json schema does not match the Unstructured schema",
+                )
+            if "fast strategy is not available for image files" in e.args[0]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="The fast strategy is not available for image files",
+                )
+
+            raise e
+        except zipfile.BadZipFile:
             raise HTTPException(
                 status_code=400,
-                detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
+                detail="File is not a valid docx",
             )
 
-        raise e
-    except ValueError as e:
-        if "Invalid file" in e.args[0]:
-            raise HTTPException(
-                status_code=400, detail=f"{file_content_type} not currently supported"
-            )
-        if "Unstructured schema" in e.args[0]:
-            raise HTTPException(
-                status_code=400,
-                detail="Json schema does not match the Unstructured schema",
-            )
-        if "fast strategy is not available for image files" in e.args[0]:
-            raise HTTPException(
-                status_code=400,
-                detail="The fast strategy is not available for image files",
-            )
+        # Clean up returned elements
+        # Note(austin): pydantic should control this sort of thing for us
+        for i, element in enumerate(elements):
+            elements[i].metadata.filename = os.path.basename(filename)
 
-        raise e
-    except zipfile.BadZipFile:
-        raise HTTPException(
-            status_code=400,
-            detail="File is not a valid docx",
-        )
+            if not show_coordinates and element.metadata.coordinates:
+                elements[i].metadata.coordinates = None
 
-    # Clean up returned elements
-    # Note(austin): pydantic should control this sort of thing for us
-    for i, element in enumerate(elements):
-        elements[i].metadata.filename = os.path.basename(filename)
+            if element.metadata.last_modified:
+                elements[i].metadata.last_modified = None
 
-        if not show_coordinates and element.metadata.coordinates:
-            elements[i].metadata.coordinates = None
+            if element.metadata.file_directory:
+                elements[i].metadata.file_directory = None
 
-        if element.metadata.last_modified:
-            elements[i].metadata.last_modified = None
+            if element.metadata.detection_class_prob:
+                elements[i].metadata.detection_class_prob = None
 
-        if element.metadata.file_directory:
-            elements[i].metadata.file_directory = None
+        if response_type == "text/csv":
+            df = convert_to_dataframe(elements)
+            return df.to_csv(index=False)
 
-        if element.metadata.detection_class_prob:
-            elements[i].metadata.detection_class_prob = None
-
-    if response_type == "text/csv":
-        df = convert_to_dataframe(elements)
-        return df.to_csv(index=False)
-
-    result = convert_to_isd(elements)
+        result = convert_to_isd(elements)
+        for el in result:
+            if el["type"] == "Image":
+                if os.path.exists(el["metadata"]["image_path"]):
+                    with open(el["metadata"]["image_path"], "rb") as f:
+                        el["metadata"]["image"] = b64encode(f.read())
 
     return result
 
@@ -691,6 +710,7 @@ def pipeline_1(
     combine_under_n_chars: List[str] = Form(default=[]),
     new_after_n_chars: List[str] = Form(default=[]),
     max_characters: List[str] = Form(default=[]),
+    pdf_extract_images: List[str] = Form(default=[]),
 ):
     auth_token = os.environ.get("AUTH")
     auth_header = request.headers.get("Authorization")
@@ -756,6 +776,7 @@ def pipeline_1(
                     m_combine_under_n_chars=combine_under_n_chars,
                     m_new_after_n_chars=new_after_n_chars,
                     m_max_characters=max_characters,
+                    m_pdf_extract_images=pdf_extract_images,
                 )
 
                 if is_expected_response_type(media_type, type(response)):
