@@ -57,6 +57,7 @@ RUN python3.10 -c "import nltk; nltk.download('punkt')" && \
 # FROM model-deps as code
 
 COPY --chown=${NB_USER}:${NB_USER} CHANGELOG.md CHANGELOG.md
+COPY --chown=${NB_USER}:${NB_USER} drivers.sh drivers.sh
 COPY --chown=${NB_USER}:${NB_USER} logger_config.yaml logger_config.yaml
 COPY --chown=${NB_USER}:${NB_USER} prepline_general/ prepline_general/
 COPY --chown=${NB_USER}:${NB_USER} exploration-notebooks exploration-notebooks
