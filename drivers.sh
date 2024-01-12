@@ -1,7 +1,1 @@
-DRIVER=535.54.03
-
-yum update
-yum install sudo -y
-sudo yum install gcc10 -y
-sudo wget -O /tmp/NVIDIA-Linux-driver.run "https://us.download.nvidia.com/tesla/${DRIVER}/NVIDIA-Linux-x86_64-${DRIVER}.run"
-sudo CC=gcc10-cc sh /tmp/NVIDIA-Linux-driver.run -q -a --ui=none
+docker run -p 80:8000 -e AUTH=d9261593-45ac-42df-91af-bf77b46df0ca -e UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB=512 --gpus=all --rm --name unstructured-gpu unstructured-gpu
