@@ -35,7 +35,7 @@ RUN python3.10 -m pip install pip==22.2.1 \
   && dnf -y groupinstall "Development Tools" \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache  -r requirements-base.txt' \ 
   && su -l ${NB_USER} -c 'pip3.10 uninstall --no-cache onnxruntime -y' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.17.0 --index-url=https://pkgs.dev.azure.com/onnxruntime/onnxruntime/_packaging/onnxruntime-cuda-12/pypi/simple' \
+  && su -l ${NB_USER} -c 'pip3.10 install --no-cache ort-nightly-gpu --index-url=https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ort-cuda-12-nightly/pypi/simple/'\
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu' \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
   && dnf -y groupremove "Development Tools" \
