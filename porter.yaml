@@ -2,7 +2,7 @@ version: v2
 name: unstructured-api
 services:
 - name: unstructured-api
-  run: "docker run -p 80:8000 --gpus=all --rm --name unstructured-gpu unstructured-gpu"
+  run: "docker run -p 80:8000 --gpus all --rm --name unstructured-gpu unstructured-gpu"
   type: web
   instances: 1
   cpuCores: 1
