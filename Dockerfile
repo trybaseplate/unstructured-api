@@ -35,8 +35,8 @@ RUN python3.10 -m pip install pip==22.2.1 \
   && dnf -y groupinstall "Development Tools" \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache  -r requirements-base.txt' \ 
   && su -l ${NB_USER} -c 'pip3.10 uninstall --no-cache onnxruntime -y' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.15' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu' \
+  && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.15.0' \
+  && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu==2.5.2' \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
   && dnf -y groupremove "Development Tools" \
   && dnf clean all \

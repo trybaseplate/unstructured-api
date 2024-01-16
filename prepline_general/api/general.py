@@ -504,7 +504,7 @@ def pipeline_api(
         result = convert_to_isd(elements)
         for el in result:
             if el["type"] == "Image":
-                if os.path.exists(el["metadata"]["image_path"]):
+                if el["metadata"].get("image_path") and os.path.exists(el["metadata"]["image_path"]):
                     with open(el["metadata"]["image_path"], "rb") as f:
                         el["metadata"]["image"] = b64encode(f.read())
 
@@ -713,7 +713,7 @@ def pipeline_1(
     pdf_extract_images: List[str] = Form(default=[]),
 ):
     auth_token = os.environ.get("AUTH")
-    auth_header = request.headers.get("Authorization")
+    auth_header = request.headers.get("unstructured-api-key")
     if auth_header != auth_token:
         raise HTTPException(
                     detail="UnAuthorized",
