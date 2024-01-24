@@ -47,7 +47,7 @@ from unstructured.staging.base import (
     elements_from_json,
 )
 from unstructured_inference.models.chipper import MODEL_TYPES as CHIPPER_MODEL_TYPES
-import tempfile
+from unstructured_inference.models.base import UnknownModelException
 
 
 app = FastAPI()
@@ -192,11 +192,7 @@ def partition_pdf_splits(
     pages_per_pdf = int(os.environ.get("UNSTRUCTURED_PARALLEL_MODE_SPLIT_SIZE", 1))
 
     # If it's small enough, just process locally
-    # (Some kwargs need to be renamed for local partition)
     if len(pdf_pages) <= pages_per_pdf:
-        if partition_kwargs.get("hi_res_model_name"):
-            partition_kwargs["model_name"] = partition_kwargs.pop("hi_res_model_name")
-
         return partition(
             file=file,
             metadata_filename=metadata_filename,
@@ -252,7 +248,7 @@ class ChipperMemoryProtection:
 
 def pipeline_api(
     file,
-    request=None,
+    request: Request,
     filename="",
     file_content_type=None,
     response_type="application/json",
@@ -271,7 +267,7 @@ def pipeline_api(
     m_combine_under_n_chars=[],
     m_new_after_n_chars=[],
     m_max_characters=[],
-    m_pdf_extract_images=[],
+    m_extract_image_block_types=None,
 ):
     if filename.endswith(".msg"):
         # Note(yuming): convert file type for msg files
@@ -279,8 +275,14 @@ def pipeline_api(
         file_content_type = "application/x-ole-storage"
 
     # We don't want to keep logging the same params for every parallel call
-    origin_ip = request.headers.get("X-Forwarded-For") or request.client.host
-    is_internal_request = origin_ip.startswith("10.")
+    is_internal_request = (
+        (
+            request.headers.get("X-Forwarded-For")
+            and str(request.headers.get("X-Forwarded-For")).startswith("10.")
+        )
+        # -- NOTE(scanny): request.client is None in certain testing environments --
+        or (request.client and request.client.host.startswith("10."))
+    )
 
     if not is_internal_request:
         logger.debug(
@@ -304,7 +306,7 @@ def pipeline_api(
                         "m_combine_under_n_chars": m_combine_under_n_chars,
                         "new_after_n_chars": m_new_after_n_chars,
                         "m_max_characters": m_max_characters,
-                        "m_pdf_extract_images": m_pdf_extract_images,
+                        "m_extract_image_block_types": m_extract_image_block_types,
                     },
                     default=str,
                 )
@@ -317,11 +319,6 @@ def pipeline_api(
 
     if file_content_type == "application/pdf":
         pdf = _check_pdf(file)
-
-    pdf_extract_images_str = (
-        m_pdf_extract_images[0] if len(m_pdf_extract_images) else "false"
-    ).lower()
-    pdf_extract_images = pdf_extract_images_str == "true"
 
     show_coordinates_str = (m_coordinates[0] if len(m_coordinates) else "false").lower()
     show_coordinates = show_coordinates_str == "true"
@@ -374,139 +371,153 @@ def pipeline_api(
         int(m_max_characters[0]) if m_max_characters and m_max_characters[0].isdigit() else 1500
     )
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-
+    if m_extract_image_block_types and len(m_extract_image_block_types):
         try:
-            logger.debug(
-                "partition input data: {}".format(
-                    json.dumps(
-                        {
-                            "content_type": file_content_type,
-                            "strategy": strategy,
-                            "ocr_languages": ocr_languages,
-                            "coordinates": show_coordinates,
-                            "pdf_infer_table_structure": pdf_infer_table_structure,
-                            "include_page_breaks": include_page_breaks,
-                            "encoding": encoding,
-                            "model_name": hi_res_model_name,
-                            "xml_keep_tags": xml_keep_tags,
-                            "skip_infer_table_types": skip_infer_table_types,
-                            "languages": languages,
-                            "chunking_strategy": chunking_strategy,
-                            "multipage_sections": multipage_sections,
-                            "combine_under_n_chars": combine_under_n_chars,
-                            "new_after_n_chars": new_after_n_chars,
-                            "max_characters": max_characters,
-                            "pdf_extract_images": pdf_extract_images,
-                            "pdf_image_output_dir_path": temp_dir
-                        },
-                        default=str,
+            extract_image_block_types = json.loads(m_extract_image_block_types[0])
+        except:
+            for block_type in m_extract_image_block_types:
+                if block_type.lower() not in ["image", "table"]:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid extract_image_block_types: {block_type}. Must be one of ['image', 'table']",
                     )
+            extract_image_block_types = m_extract_image_block_types
+    else:
+        extract_image_block_types = None
+    
+
+    extract_image_block_to_payload = bool(extract_image_block_types)
+
+    try:
+        logger.debug(
+            "partition input data: {}".format(
+                json.dumps(
+                    {
+                        "content_type": file_content_type,
+                        "strategy": strategy,
+                        "ocr_languages": ocr_languages,
+                        "coordinates": show_coordinates,
+                        "pdf_infer_table_structure": pdf_infer_table_structure,
+                        "include_page_breaks": include_page_breaks,
+                        "encoding": encoding,
+                        "hi_res_model_name": hi_res_model_name,
+                        "xml_keep_tags": xml_keep_tags,
+                        "skip_infer_table_types": skip_infer_table_types,
+                        "languages": languages,
+                        "chunking_strategy": chunking_strategy,
+                        "multipage_sections": multipage_sections,
+                        "combine_under_n_chars": combine_under_n_chars,
+                        "new_after_n_chars": new_after_n_chars,
+                        "max_characters": max_characters,
+                        "extract_image_block_types": extract_image_block_types,
+                        "extract_image_block_to_payload": extract_image_block_to_payload,
+                    },
+                    default=str,
                 )
             )
+        )
 
-            partition_kwargs = {
-                "file": file,
-                "metadata_filename": filename,
-                "content_type": file_content_type,
-                "encoding": encoding,
-                "include_page_breaks": include_page_breaks,
-                "model_name": hi_res_model_name,
-                "ocr_languages": ocr_languages,
-                "pdf_infer_table_structure": pdf_infer_table_structure,
-                "skip_infer_table_types": skip_infer_table_types,
-                "strategy": strategy,
-                "xml_keep_tags": xml_keep_tags,
-                "languages": languages,
-                "chunking_strategy": chunking_strategy,
-                "multipage_sections": multipage_sections,
-                "combine_under_n_chars": combine_under_n_chars,
-                "new_after_n_chars": new_after_n_chars,
-                "max_characters": max_characters,
-                "pdf_extract_images": pdf_extract_images,
-                "pdf_image_output_dir_path": temp_dir
-            }
+        partition_kwargs = {
+            "file": file,
+            "metadata_filename": filename,
+            "content_type": file_content_type,
+            "encoding": encoding,
+            "include_page_breaks": include_page_breaks,
+            "hi_res_model_name": hi_res_model_name,
+            "ocr_languages": ocr_languages,
+            "pdf_infer_table_structure": pdf_infer_table_structure,
+            "skip_infer_table_types": skip_infer_table_types,
+            "strategy": strategy,
+            "xml_keep_tags": xml_keep_tags,
+            "languages": languages,
+            "chunking_strategy": chunking_strategy,
+            "multipage_sections": multipage_sections,
+            "combine_text_under_n_chars": combine_under_n_chars,
+            "new_after_n_chars": new_after_n_chars,
+            "max_characters": max_characters,
+            "extract_image_block_types": extract_image_block_types,
+            "extract_image_block_to_payload": extract_image_block_to_payload,
+        }
 
-            if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
-                # Be careful of naming differences in api params vs partition params!
-                # These kwargs are going back into the api, not into partition
-                # They need to be switched back in partition_pdf_splits
-                if partition_kwargs.get("model_name"):
-                    partition_kwargs["hi_res_model_name"] = partition_kwargs.pop("model_name")
-
-                elements = partition_pdf_splits(
-                    request=request,
-                    pdf_pages=pdf.pages,
-                    coordinates=show_coordinates,
-                    **partition_kwargs,
-                )
-            elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
-                with ChipperMemoryProtection():
-                    elements = partition(**partition_kwargs)
-            else:
+        if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
+            elements = partition_pdf_splits(
+                request=request,
+                pdf_pages=pdf.pages,
+                coordinates=show_coordinates,
+                **partition_kwargs,
+            )
+        elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
+            with ChipperMemoryProtection():
                 elements = partition(**partition_kwargs)
+        else:
+            elements = partition(**partition_kwargs)
 
-        except OSError as e:
-            if (
-                "chipper-fast-fine-tuning is not a local folder" in e.args[0]
-                or "ved-fine-tuning is not a local folder" in e.args[0]
-            ):
-                raise HTTPException(
-                    status_code=400,
-                    detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
-                )
-
-            raise e
-        except ValueError as e:
-            if "Invalid file" in e.args[0]:
-                raise HTTPException(
-                    status_code=400, detail=f"{file_content_type} not currently supported"
-                )
-            if "Unstructured schema" in e.args[0]:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Json schema does not match the Unstructured schema",
-                )
-            if "fast strategy is not available for image files" in e.args[0]:
-                raise HTTPException(
-                    status_code=400,
-                    detail="The fast strategy is not available for image files",
-                )
-
-            raise e
-        except zipfile.BadZipFile:
+    except OSError as e:
+        if isinstance(e.args[0], str) and (
+            "chipper-fast-fine-tuning is not a local folder" in e.args[0]
+            or "ved-fine-tuning is not a local folder" in e.args[0]
+        ):
             raise HTTPException(
                 status_code=400,
-                detail="File is not a valid docx",
+                detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
             )
 
-        # Clean up returned elements
-        # Note(austin): pydantic should control this sort of thing for us
-        for i, element in enumerate(elements):
-            elements[i].metadata.filename = os.path.basename(filename)
+        # OSError isn't caught by our top level handler, so convert it here
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+    except ValueError as e:
+        if "Invalid file" in e.args[0]:
+            raise HTTPException(
+                status_code=400, detail=f"{file_content_type} not currently supported"
+            )
+        if "Unstructured schema" in e.args[0]:
+            raise HTTPException(
+                status_code=400,
+                detail="Json schema does not match the Unstructured schema",
+            )
+        if "fast strategy is not available for image files" in e.args[0]:
+            raise HTTPException(
+                status_code=400,
+                detail="The fast strategy is not available for image files",
+            )
 
-            if not show_coordinates and element.metadata.coordinates:
-                elements[i].metadata.coordinates = None
+        raise e
+    except zipfile.BadZipFile:
+        raise HTTPException(
+            status_code=422,
+            detail="File is not a valid docx",
+        )
 
-            if element.metadata.last_modified:
-                elements[i].metadata.last_modified = None
+    except UnknownModelException:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown model type: {hi_res_model_name}",
+        )
 
-            if element.metadata.file_directory:
-                elements[i].metadata.file_directory = None
+    # Clean up returned elements
+    # Note(austin): pydantic should control this sort of thing for us
+    for i, element in enumerate(elements):
+        elements[i].metadata.filename = os.path.basename(filename)
 
-            if element.metadata.detection_class_prob:
-                elements[i].metadata.detection_class_prob = None
+        if not show_coordinates and element.metadata.coordinates:
+            elements[i].metadata.coordinates = None
 
-        if response_type == "text/csv":
-            df = convert_to_dataframe(elements)
-            return df.to_csv(index=False)
+        if element.metadata.last_modified:
+            elements[i].metadata.last_modified = None
 
-        result = convert_to_isd(elements)
-        for el in result:
-            if el["type"] == "Image":
-                if el["metadata"].get("image_path") and os.path.exists(el["metadata"]["image_path"]):
-                    with open(el["metadata"]["image_path"], "rb") as f:
-                        el["metadata"]["image"] = b64encode(f.read())
+        if element.metadata.file_directory:
+            elements[i].metadata.file_directory = None
+
+        if element.metadata.detection_class_prob:
+            elements[i].metadata.detection_class_prob = None
+
+    if response_type == "text/csv":
+        df = convert_to_dataframe(elements)
+        return df.to_csv(index=False)
+
+    result = convert_to_isd(elements)
 
     return result
 
@@ -518,6 +529,7 @@ def _check_free_memory():
     memory_free_minimum = int(os.environ.get("UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB", 2048))
 
     if mem.available <= memory_free_minimum * 1024 * 1024:
+        logger.warning(f"Rejecting because free memory is below {memory_free_minimum} MB")
         raise HTTPException(
             status_code=503, detail="Server is under heavy load. Please try again later."
         )
@@ -537,7 +549,7 @@ def _check_pdf(file):
             detail="File is encrypted. Please decrypt it with password.",
         )
     except pypdf.errors.PdfReadError:
-        raise HTTPException(status_code=400, detail="File does not appear to be a valid PDF")
+        raise HTTPException(status_code=422, detail="File does not appear to be a valid PDF")
 
 
 def _validate_strategy(m_strategy):
@@ -688,8 +700,16 @@ def ungz_file(file: UploadFile, gz_uncompressed_content_type=None) -> UploadFile
     )
 
 
+@router.get("/general/v0/general")
+@router.get("/general/v0.0.63/general")
+async def handle_invalid_get_request():
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Only POST requests are supported."
+    )
+
+
 @router.post("/general/v0/general")
-@router.post("/general/v0.0.59/general")
+@router.post("/general/v0.0.63/general")
 def pipeline_1(
     request: Request,
     gz_uncompressed_content_type: Optional[str] = Form(default=None),
@@ -710,16 +730,15 @@ def pipeline_1(
     combine_under_n_chars: List[str] = Form(default=[]),
     new_after_n_chars: List[str] = Form(default=[]),
     max_characters: List[str] = Form(default=[]),
-    pdf_extract_images: List[str] = Form(default=[]),
+    extract_image_block_types: List[str] = Form(default=None),
 ):
-    auth_token = os.environ.get("AUTH")
-    auth_header = request.headers.get("unstructured-api-key")
-    if auth_header != auth_token:
-        raise HTTPException(
-                    detail="UnAuthorized",
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    )
-    
+    if api_key_env := os.environ.get("AUTH"):
+        api_key = request.headers.get("unstructured-api-key")
+        if api_key != api_key_env:
+            raise HTTPException(
+                detail=f"API key {api_key} is invalid", status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
     if files:
         for file_index in range(len(files)):
             if files[file_index].content_type == "application/gzip":
@@ -776,7 +795,7 @@ def pipeline_1(
                     m_combine_under_n_chars=combine_under_n_chars,
                     m_new_after_n_chars=new_after_n_chars,
                     m_max_characters=max_characters,
-                    m_pdf_extract_images=pdf_extract_images,
+                    m_extract_image_block_types=extract_image_block_types,
                 )
 
                 if is_expected_response_type(media_type, type(response)):
@@ -824,7 +843,7 @@ def pipeline_1(
             )
     else:
         raise HTTPException(
-            detail='Request parameter "files" is required.\n',
+            detail='Request parameter "files" is required.',
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

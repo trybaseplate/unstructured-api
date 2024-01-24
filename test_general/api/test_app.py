@@ -398,9 +398,9 @@ def test_general_api_returns_400_unsupported_file(example_filename):
     assert response.status_code == 400
 
 
-def test_general_api_returns_400_bad_pdf():
+def test_general_api_returns_422_bad_pdf():
     """
-    Verify that we get a 400 for invalid PDF files
+    Verify that we get a 422 for invalid PDF files
     """
     tmp = tempfile.NamedTemporaryFile(suffix=".pdf")
     tmp.write(b"This is not a valid PDF")
@@ -409,7 +409,7 @@ def test_general_api_returns_400_bad_pdf():
         MAIN_API_ROUTE, files=[("files", (str(tmp.name), open(tmp.name, "rb"), "application/pdf"))]
     )
     assert response.json() == {"detail": "File does not appear to be a valid PDF"}
-    assert response.status_code == 400
+    assert response.status_code == 422
     tmp.close()
 
     # Don't blow up if this isn't actually a pdf
@@ -420,14 +420,14 @@ def test_general_api_returns_400_bad_pdf():
     )
 
     assert response.json() == {"detail": "File does not appear to be a valid PDF"}
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 def test_general_api_returns_503(monkeypatch):
     """
     When available memory is below the minimum. return a 503, unless our origin ip is 10.{4,5}.x.x
     """
-    monkeypatch.setenv("UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB", "30000")
+    monkeypatch.setenv("UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB", "300000")
 
     client = TestClient(app)
     test_file = Path("sample-docs") / "fake-xml.xml"
@@ -437,6 +437,33 @@ def test_general_api_returns_503(monkeypatch):
     )
 
     assert response.status_code == 503
+
+
+def test_general_api_returns_401(monkeypatch):
+    """
+    When UNSTRUCTURED_API_KEY is set, return a 401 if the unstructured-api-key header does not match
+    """
+    monkeypatch.setenv("UNSTRUCTURED_API_KEY", "foobar")
+
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "fake-xml.xml"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        headers={"unstructured-api-key": "foobar"},
+    )
+
+    assert response.status_code == 200
+
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "fake-xml.xml"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        headers={"unstructured-api-key": "helloworld"},
+    )
+
+    assert response.status_code == 401
 
 
 class MockResponse:
@@ -499,7 +526,7 @@ def test_parallel_mode_passes_params(monkeypatch):
         file=ANY,
         metadata_filename=str(test_file),
         content_type="application/pdf",
-        model_name="yolox",
+        hi_res_model_name="yolox",
         encoding="foo",
         include_page_breaks=True,
         ocr_languages=None,
@@ -510,9 +537,11 @@ def test_parallel_mode_passes_params(monkeypatch):
         skip_infer_table_types="foo",
         chunking_strategy="by_title",
         multipage_sections=False,
-        combine_under_n_chars=501,
+        combine_text_under_n_chars=501,
         new_after_n_chars=1501,
         max_characters=1502,
+        extract_image_block_types=None,
+        extract_image_block_to_payload=False,
     )
 
 
@@ -730,7 +759,7 @@ def test_encrypted_pdf():
         assert response.status_code == 200
 
 
-def test_general_api_returns_400_bad_docx():
+def test_general_api_returns_422_bad_docx():
     """
     Verify that we get a 400 for invalid docx files
     """
@@ -750,7 +779,7 @@ def test_general_api_returns_400_bad_docx():
         ],
     )
     assert response.json().get("detail") == "File is not a valid docx"
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 def test_general_api_returns_400_bad_json(tmpdir):
@@ -828,3 +857,71 @@ def test_invalid_strategy_for_image_file():
     )
     assert resp.status_code == 400
     assert "fast strategy is not available for image files" in resp.text
+
+
+@pytest.mark.parametrize(
+    ("exception", "status_code", "message"),
+    [
+        (
+            OSError("chipper-fast-fine-tuning is not a local folder"),
+            400,
+            "The Chipper model is not available for download. "
+            "It can be accessed via the official hosted API.",
+        ),
+        (
+            OSError("ved-fine-tuning is not a local folder"),
+            400,
+            "The Chipper model is not available for download. "
+            "It can be accessed via the official hosted API.",
+        ),
+        (OSError(1, "An error happened"), 500, "[Errno 1] An error happened"),
+    ],
+)
+def test_chipper_not_available_errors(monkeypatch, mocker, exception, status_code, message):
+    """
+    Assert that we return the right error if Chipper is not downloaded.
+    OSError can have an int as the first arg, do not blow up if that happens.
+    """
+
+    mock_partition = Mock(side_effect=exception)
+
+    monkeypatch.setattr(
+        general,
+        "partition",
+        mock_partition,
+    )
+
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "layout-parser-paper-fast.pdf"
+
+    resp = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb"), "application/pdf"))],
+        data={"strategy": "hi_res", "hi_res_model_name": "chipper"},
+    )
+
+    assert resp.status_code == status_code
+    assert resp.json().get("detail") == message
+
+
+def test_invalid_hi_res_model_name_returns_400():
+    """Verify that we get a 400 if we pass in a bad model_name"""
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "layout-parser-paper-fast.pdf"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={
+            "strategy": "hi_res",
+            "hi_res_model_name": "invalid_model",
+        },
+    )
+    assert response.status_code == 400
+    assert "Unknown model type" in response.text
+
+
+def test_get_request():
+    client = TestClient(app)
+    response = client.get("/general/v0/general")
+    assert response.status_code == 405
+    assert response.json() == {"detail": "Only POST requests are supported."}

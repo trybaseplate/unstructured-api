@@ -1,3 +1,22 @@
+## 0.0.63-dev0
+
+* Fix bug that ignored `combine_under_n_chars` chunking option argument.
+
+## 0.0.62
+
+* Add hi_res_model_name to partition and deprecate model_name
+* Bump unstructured to 0.12.0
+* Add support for returning extracted image blocks as base64 encoded data stored in metadata fields
+
+## 0.0.61
+
+* Bump unstructured to 0.11.6
+* Handle invalid hi_res_model_name kwarg
+
+## 0.0.60
+
+* Enable self-hosted authorization using UNSTRUCTURED_API_KEY env variable
+
 ## 0.0.59
 
 * Bump unstructured to 0.11.0
