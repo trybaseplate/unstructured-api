@@ -48,7 +48,6 @@ from unstructured.staging.base import (
 )
 from unstructured_inference.models.chipper import MODEL_TYPES as CHIPPER_MODEL_TYPES
 from unstructured_inference.models.base import UnknownModelException
-import tempfile
 
 
 app = FastAPI()
@@ -145,9 +144,7 @@ def call_api(request_url, api_key, filename, file, content_type, **partition_kwa
     return response.text
 
 
-def partition_file_via_api(
-    file_tuple, request, filename, content_type, **partition_kwargs
-):
+def partition_file_via_api(file_tuple, request, filename, content_type, **partition_kwargs):
     """
     Send the given file to be partitioned remotely with retry logic,
     where the remote url is set by env var.
@@ -162,15 +159,11 @@ def partition_file_via_api(
 
     request_url = os.environ.get("UNSTRUCTURED_PARALLEL_MODE_URL")
     if not request_url:
-        raise HTTPException(
-            status_code=500, detail="Parallel mode enabled but no url set!"
-        )
+        raise HTTPException(status_code=500, detail="Parallel mode enabled but no url set!")
 
     api_key = request.headers.get("unstructured-api-key")
 
-    result = call_api(
-        request_url, api_key, filename, file, content_type, **partition_kwargs
-    )
+    result = call_api(request_url, api_key, filename, file, content_type, **partition_kwargs)
     elements = elements_from_json(text=result)
 
     # We need to account for the original page numbers
@@ -183,13 +176,7 @@ def partition_file_via_api(
 
 
 def partition_pdf_splits(
-    request,
-    pdf_pages,
-    file,
-    metadata_filename,
-    content_type,
-    coordinates,
-    **partition_kwargs,
+    request, pdf_pages, file, metadata_filename, content_type, coordinates, **partition_kwargs
 ):
     """
     Split a pdf into chunks and process in parallel with more api calls, or partition
@@ -249,8 +236,7 @@ class ChipperMemoryProtection:
             # Log here so we can track how often it happens
             logger.error("Chipper is already is use")
             raise HTTPException(
-                status_code=503,
-                detail="Server is under heavy load. Please try again later.",
+                status_code=503, detail="Server is under heavy load. Please try again later."
             )
 
         IS_CHIPPER_PROCESSING = True
@@ -262,7 +248,7 @@ class ChipperMemoryProtection:
 
 def pipeline_api(
     file,
-    request=None,
+    request: Request,
     filename="",
     file_content_type=None,
     response_type="application/json",
@@ -281,7 +267,6 @@ def pipeline_api(
     m_combine_under_n_chars=[],
     m_new_after_n_chars=[],
     m_max_characters=[],
-    m_pdf_extract_images=[],
     m_extract_image_block_types=None,
 ):
     if filename.endswith(".msg"):
@@ -290,8 +275,14 @@ def pipeline_api(
         file_content_type = "application/x-ole-storage"
 
     # We don't want to keep logging the same params for every parallel call
-    origin_ip = request.headers.get("X-Forwarded-For") or request.client.host
-    is_internal_request = origin_ip.startswith("10.")
+    is_internal_request = (
+        (
+            request.headers.get("X-Forwarded-For")
+            and str(request.headers.get("X-Forwarded-For")).startswith("10.")
+        )
+        # -- NOTE(scanny): request.client is None in certain testing environments --
+        or (request.client and request.client.host.startswith("10."))
+    )
 
     if not is_internal_request:
         logger.debug(
@@ -316,7 +307,6 @@ def pipeline_api(
                         "new_after_n_chars": m_new_after_n_chars,
                         "m_max_characters": m_max_characters,
                         "m_extract_image_block_types": m_extract_image_block_types,
-                        "m_pdf_extract_images": m_pdf_extract_images,
                     },
                     default=str,
                 )
@@ -330,17 +320,10 @@ def pipeline_api(
     if file_content_type == "application/pdf":
         pdf = _check_pdf(file)
 
-    pdf_extract_images_str = (
-        m_pdf_extract_images[0] if len(m_pdf_extract_images) else "false"
-    ).lower()
-    pdf_extract_images = pdf_extract_images_str == "true"
-
     show_coordinates_str = (m_coordinates[0] if len(m_coordinates) else "false").lower()
     show_coordinates = show_coordinates_str == "true"
 
-    hi_res_model_name = _validate_hi_res_model_name(
-        m_hi_res_model_name, show_coordinates
-    )
+    hi_res_model_name = _validate_hi_res_model_name(m_hi_res_model_name, show_coordinates)
     strategy = _validate_strategy(m_strategy)
     chunking_strategy = _validate_chunking_strategy(m_chunking_strategy)
     pdf_infer_table_structure = _set_pdf_infer_table_structure(
@@ -351,9 +334,7 @@ def pipeline_api(
     enable_parallel_mode = os.environ.get("UNSTRUCTURED_PARALLEL_MODE_ENABLED", "false")
     pdf_parallel_mode_enabled = enable_parallel_mode == "true"
 
-    ocr_languages = (
-        "+".join(m_ocr_languages) if m_ocr_languages and len(m_ocr_languages) else None
-    )
+    ocr_languages = "+".join(m_ocr_languages) if m_ocr_languages and len(m_ocr_languages) else None
 
     include_page_breaks_str = (
         m_include_page_breaks[0] if len(m_include_page_breaks) else "false"
@@ -362,15 +343,11 @@ def pipeline_api(
 
     encoding = m_encoding[0] if len(m_encoding) else None
 
-    xml_keep_tags_str = (
-        m_xml_keep_tags[0] if len(m_xml_keep_tags) else "false"
-    ).lower()
+    xml_keep_tags_str = (m_xml_keep_tags[0] if len(m_xml_keep_tags) else "false").lower()
     xml_keep_tags = xml_keep_tags_str == "true"
 
     skip_infer_table_types = (
-        m_skip_infer_table_types[0]
-        if len(m_skip_infer_table_types)
-        else ["pdf", "jpg", "png"]
+        m_skip_infer_table_types[0] if len(m_skip_infer_table_types) else ["pdf", "jpg", "png"]
     )
 
     multipage_sections_str = (
@@ -391,9 +368,7 @@ def pipeline_api(
     )
 
     max_characters = (
-        int(m_max_characters[0])
-        if m_max_characters and m_max_characters[0].isdigit()
-        else 1500
+        int(m_max_characters[0]) if m_max_characters and m_max_characters[0].isdigit() else 1500
     )
 
     extract_image_block_types = (
@@ -404,143 +379,119 @@ def pipeline_api(
 
     extract_image_block_to_payload = bool(extract_image_block_types)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            logger.debug(
-                "partition input data: {}".format(
-                    json.dumps(
-                        {
-                            "content_type": file_content_type,
-                            "strategy": strategy,
-                            "ocr_languages": ocr_languages,
-                            "coordinates": show_coordinates,
-                            "pdf_infer_table_structure": pdf_infer_table_structure,
-                            "include_page_breaks": include_page_breaks,
-                            "encoding": encoding,
-                            "hi_res_model_name": hi_res_model_name,
-                            "xml_keep_tags": xml_keep_tags,
-                            "skip_infer_table_types": skip_infer_table_types,
-                            "languages": languages,
-                            "chunking_strategy": chunking_strategy,
-                            "multipage_sections": multipage_sections,
-                            "combine_under_n_chars": combine_under_n_chars,
-                            "new_after_n_chars": new_after_n_chars,
-                            "max_characters": max_characters,
-                            "extract_image_block_types": extract_image_block_types,
-                            "extract_image_block_to_payload": extract_image_block_to_payload,
-                            "pdf_extract_images": pdf_extract_images,
-                            "pdf_image_output_dir_path": temp_dir,
-                        },
-                        default=str,
-                    )
+    try:
+        logger.debug(
+            "partition input data: {}".format(
+                json.dumps(
+                    {
+                        "content_type": file_content_type,
+                        "strategy": strategy,
+                        "ocr_languages": ocr_languages,
+                        "coordinates": show_coordinates,
+                        "pdf_infer_table_structure": pdf_infer_table_structure,
+                        "include_page_breaks": include_page_breaks,
+                        "encoding": encoding,
+                        "hi_res_model_name": hi_res_model_name,
+                        "xml_keep_tags": xml_keep_tags,
+                        "skip_infer_table_types": skip_infer_table_types,
+                        "languages": languages,
+                        "chunking_strategy": chunking_strategy,
+                        "multipage_sections": multipage_sections,
+                        "combine_under_n_chars": combine_under_n_chars,
+                        "new_after_n_chars": new_after_n_chars,
+                        "max_characters": max_characters,
+                        "extract_image_block_types": extract_image_block_types,
+                        "extract_image_block_to_payload": extract_image_block_to_payload,
+                    },
+                    default=str,
                 )
             )
+        )
 
-            partition_kwargs = {
-                "file": file,
-                "metadata_filename": filename,
-                "content_type": file_content_type,
-                "encoding": encoding,
-                "include_page_breaks": include_page_breaks,
-                "hi_res_model_name": hi_res_model_name,
-                "ocr_languages": ocr_languages,
-                "pdf_infer_table_structure": pdf_infer_table_structure,
-                "skip_infer_table_types": skip_infer_table_types,
-                "strategy": strategy,
-                "xml_keep_tags": xml_keep_tags,
-                "languages": languages,
-                "chunking_strategy": chunking_strategy,
-                "multipage_sections": multipage_sections,
-                "combine_under_n_chars": combine_under_n_chars,
-                "new_after_n_chars": new_after_n_chars,
-                "max_characters": max_characters,
-                "extract_image_block_types": extract_image_block_types,
-                "extract_image_block_to_payload": extract_image_block_to_payload,
-                "pdf_extract_images": pdf_extract_images,
-                "pdf_image_output_dir_path": temp_dir,
-            }
+        partition_kwargs = {
+            "file": file,
+            "metadata_filename": filename,
+            "content_type": file_content_type,
+            "encoding": encoding,
+            "include_page_breaks": include_page_breaks,
+            "hi_res_model_name": hi_res_model_name,
+            "ocr_languages": ocr_languages,
+            "pdf_infer_table_structure": pdf_infer_table_structure,
+            "skip_infer_table_types": skip_infer_table_types,
+            "strategy": strategy,
+            "xml_keep_tags": xml_keep_tags,
+            "languages": languages,
+            "chunking_strategy": chunking_strategy,
+            "multipage_sections": multipage_sections,
+            "combine_text_under_n_chars": combine_under_n_chars,
+            "new_after_n_chars": new_after_n_chars,
+            "max_characters": max_characters,
+            "extract_image_block_types": extract_image_block_types,
+            "extract_image_block_to_payload": extract_image_block_to_payload,
+        }
 
-            if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
-                elements = partition_pdf_splits(
-                    request=request,
-                    pdf_pages=pdf.pages,
-                    coordinates=show_coordinates,
-                    **partition_kwargs,
-                )
-            elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
-                with ChipperMemoryProtection():
-                    elements = partition(**partition_kwargs)
-            else:
+        if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
+            elements = partition_pdf_splits(
+                request=request,
+                pdf_pages=pdf.pages,
+                coordinates=show_coordinates,
+                **partition_kwargs,
+            )
+        elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
+            with ChipperMemoryProtection():
                 elements = partition(**partition_kwargs)
-                if file_content_type == "application/pdf" and pdf_parallel_mode_enabled:
-                    # Be careful of naming differences in api params vs partition params!
-                    # These kwargs are going back into the api, not into partition
-                    # They need to be switched back in partition_pdf_splits
-                    if partition_kwargs.get("model_name"):
-                        partition_kwargs["hi_res_model_name"] = partition_kwargs.pop(
-                            "model_name"
-                        )
+        else:
+            elements = partition(**partition_kwargs)
 
-                    elements = partition_pdf_splits(
-                        request=request,
-                        pdf_pages=pdf.pages,
-                        coordinates=show_coordinates,
-                        **partition_kwargs,
-                    )
-                elif hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES:
-                    with ChipperMemoryProtection():
-                        elements = partition(**partition_kwargs)
-                else:
-                    elements = partition(**partition_kwargs)
-        except OSError as e:
-            if isinstance(e.args[0], str) and (
-                "chipper-fast-fine-tuning is not a local folder" in e.args[0]
-                or "ved-fine-tuning is not a local folder" in e.args[0]
-            ):
-                raise HTTPException(
-                    status_code=400,
-                    detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
-                )
-
-            # OSError isn't caught by our top level handler, so convert it here
-            raise HTTPException(
-                status_code=500,
-                detail=str(e),
-            )
-        except ValueError as e:
-            if "Invalid file" in e.args[0]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"{file_content_type} not currently supported",
-                )
-            if "Unstructured schema" in e.args[0]:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Json schema does not match the Unstructured schema",
-                )
-            if "fast strategy is not available for image files" in e.args[0]:
-                raise HTTPException(
-                    status_code=400,
-                    detail="The fast strategy is not available for image files",
-                )
-
-            raise e
-        except zipfile.BadZipFile:
-            raise HTTPException(
-                status_code=422,
-                detail="File is not a valid docx",
-            )
-
-        except UnknownModelException:
+    except OSError as e:
+        if isinstance(e.args[0], str) and (
+            "chipper-fast-fine-tuning is not a local folder" in e.args[0]
+            or "ved-fine-tuning is not a local folder" in e.args[0]
+        ):
             raise HTTPException(
                 status_code=400,
-                detail=f"Unknown model type: {hi_res_model_name}",
+                detail="The Chipper model is not available for download. It can be accessed via the official hosted API.",
             )
+
+        # OSError isn't caught by our top level handler, so convert it here
+        raise HTTPException(
+            status_code=500,
+            detail=str(e),
+        )
+    except ValueError as e:
+        if "Invalid file" in e.args[0]:
+            raise HTTPException(
+                status_code=400, detail=f"{file_content_type} not currently supported"
+            )
+        if "Unstructured schema" in e.args[0]:
+            raise HTTPException(
+                status_code=400,
+                detail="Json schema does not match the Unstructured schema",
+            )
+        if "fast strategy is not available for image files" in e.args[0]:
+            raise HTTPException(
+                status_code=400,
+                detail="The fast strategy is not available for image files",
+            )
+
+        raise e
+    except zipfile.BadZipFile:
+        raise HTTPException(
+            status_code=422,
+            detail="File is not a valid docx",
+        )
+
+    except UnknownModelException:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown model type: {hi_res_model_name}",
+        )
 
     # Clean up returned elements
     # Note(austin): pydantic should control this sort of thing for us
     for i, element in enumerate(elements):
         elements[i].metadata.filename = os.path.basename(filename)
+
         if not show_coordinates and element.metadata.coordinates:
             elements[i].metadata.coordinates = None
 
@@ -558,13 +509,6 @@ def pipeline_api(
         return df.to_csv(index=False)
 
     result = convert_to_isd(elements)
-    for el in result:
-        if el["type"] == "Image":
-            if el["metadata"].get("image_path") and os.path.exists(
-                el["metadata"]["image_path"]
-            ):
-                with open(el["metadata"]["image_path"], "rb") as f:
-                    el["metadata"]["image"] = b64encode(f.read())
 
     return result
 
@@ -573,17 +517,12 @@ def _check_free_memory():
     """Reject traffic when free memory is below minimum.
     Default to 2GB."""
     mem = psutil.virtual_memory()
-    memory_free_minimum = int(
-        os.environ.get("UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB", 2048)
-    )
+    memory_free_minimum = int(os.environ.get("UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB", 2048))
 
     if mem.available <= memory_free_minimum * 1024 * 1024:
-        logger.warning(
-            f"Rejecting because free memory is below {memory_free_minimum} MB"
-        )
+        logger.warning(f"Rejecting because free memory is below {memory_free_minimum} MB")
         raise HTTPException(
-            status_code=503,
-            detail="Server is under heavy load. Please try again later.",
+            status_code=503, detail="Server is under heavy load. Please try again later."
         )
 
 
@@ -601,9 +540,7 @@ def _check_pdf(file):
             detail="File is encrypted. Please decrypt it with password.",
         )
     except pypdf.errors.PdfReadError:
-        raise HTTPException(
-            status_code=422, detail="File does not appear to be a valid PDF"
-        )
+        raise HTTPException(status_code=422, detail="File does not appear to be a valid PDF")
 
 
 def _validate_strategy(m_strategy):
@@ -611,8 +548,7 @@ def _validate_strategy(m_strategy):
     strategies = ["fast", "hi_res", "auto", "ocr_only"]
     if strategy not in strategies:
         raise HTTPException(
-            status_code=400,
-            detail=f"Invalid strategy: {strategy}. Must be one of {strategies}",
+            status_code=400, detail=f"Invalid strategy: {strategy}. Must be one of {strategies}"
         )
     return strategy
 
@@ -624,11 +560,7 @@ def _validate_hi_res_model_name(m_hi_res_model_name, show_coordinates):
     if hi_res_model_name and hi_res_model_name == "chipper":
         hi_res_model_name = "chipperv2"
 
-    if (
-        hi_res_model_name
-        and hi_res_model_name in CHIPPER_MODEL_TYPES
-        and show_coordinates
-    ):
+    if hi_res_model_name and hi_res_model_name in CHIPPER_MODEL_TYPES and show_coordinates:
         raise HTTPException(
             status_code=400,
             detail=f"coordinates aren't available when using the {hi_res_model_name} model type",
@@ -637,9 +569,7 @@ def _validate_hi_res_model_name(m_hi_res_model_name, show_coordinates):
 
 
 def _validate_chunking_strategy(m_chunking_strategy):
-    chunking_strategy = (
-        m_chunking_strategy[0].lower() if len(m_chunking_strategy) else None
-    )
+    chunking_strategy = m_chunking_strategy[0].lower() if len(m_chunking_strategy) else None
     chunk_strategies = ["by_title"]
     if chunking_strategy and (chunking_strategy not in chunk_strategies):
         raise HTTPException(
@@ -715,10 +645,7 @@ class MultipartMixedResponse(StreamingResponse):
 
     def build_part(self, chunk: bytes) -> bytes:
         part = self.boundary + self.CRLF
-        part_headers = {
-            "Content-Length": len(chunk),
-            "Content-Transfer-Encoding": "base64",
-        }
+        part_headers = {"Content-Length": len(chunk), "Content-Transfer-Encoding": "base64"}
         if self.content_type is not None:
             part_headers["Content-Type"] = self.content_type
         part += self._build_part_headers(part_headers)
@@ -738,11 +665,7 @@ class MultipartMixedResponse(StreamingResponse):
                 chunk = chunk.encode(self.charset)
                 chunk = b64encode(chunk)
             await send(
-                {
-                    "type": "http.response.body",
-                    "body": self.build_part(chunk),
-                    "more_body": True,
-                }
+                {"type": "http.response.body", "body": self.build_part(chunk), "more_body": True}
             )
 
         await send({"type": "http.response.body", "body": b"", "more_body": False})
@@ -769,16 +692,15 @@ def ungz_file(file: UploadFile, gz_uncompressed_content_type=None) -> UploadFile
 
 
 @router.get("/general/v0/general")
-@router.get("/general/v0.0.62/general")
+@router.get("/general/v0.0.63/general")
 async def handle_invalid_get_request():
     raise HTTPException(
-        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
-        detail="Only POST requests are supported.",
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Only POST requests are supported."
     )
 
 
 @router.post("/general/v0/general")
-@router.post("/general/v0.0.62/general")
+@router.post("/general/v0.0.63/general")
 def pipeline_1(
     request: Request,
     gz_uncompressed_content_type: Optional[str] = Form(default=None),
@@ -800,22 +722,18 @@ def pipeline_1(
     new_after_n_chars: List[str] = Form(default=[]),
     max_characters: List[str] = Form(default=[]),
     extract_image_block_types: List[str] = Form(default=None),
-    pdf_extract_images: List[str] = Form(default=[]),
 ):
-    auth_token = os.environ.get("AUTH")
-    auth_header = request.headers.get("unstructured-api-key")
-    if auth_header != auth_token:
-        raise HTTPException(
-            detail="UnAuthorized",
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
+    if api_key_env := os.environ.get("AUTH"):
+        api_key = request.headers.get("unstructured-api-key")
+        if api_key != api_key_env:
+            raise HTTPException(
+                detail=f"API key {api_key} is invalid", status_code=status.HTTP_401_UNAUTHORIZED
+            )
 
     if files:
         for file_index in range(len(files)):
             if files[file_index].content_type == "application/gzip":
-                files[file_index] = ungz_file(
-                    files[file_index], gz_uncompressed_content_type
-                )
+                files[file_index] = ungz_file(files[file_index], gz_uncompressed_content_type)
 
     content_type = request.headers.get("Accept")
 
@@ -868,7 +786,6 @@ def pipeline_1(
                     m_combine_under_n_chars=combine_under_n_chars,
                     m_new_after_n_chars=new_after_n_chars,
                     m_max_characters=max_characters,
-                    m_pdf_extract_images=pdf_extract_images,
                     m_extract_image_block_types=extract_image_block_types,
                 )
 
@@ -881,12 +798,7 @@ def pipeline_1(
                         status_code=status.HTTP_406_NOT_ACCEPTABLE,
                     )
 
-                valid_response_types = [
-                    "application/json",
-                    "text/csv",
-                    "*/*",
-                    "multipart/mixed",
-                ]
+                valid_response_types = ["application/json", "text/csv", "*/*", "multipart/mixed"]
                 if media_type in valid_response_types:
                     if is_multipart:
                         if type(response) not in [str, bytes]:
