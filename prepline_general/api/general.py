@@ -371,11 +371,20 @@ def pipeline_api(
         int(m_max_characters[0]) if m_max_characters and m_max_characters[0].isdigit() else 1500
     )
 
-    extract_image_block_types = (
-        json.loads(m_extract_image_block_types[0])
-        if m_extract_image_block_types and len(m_extract_image_block_types)
-        else None
-    )
+    if m_extract_image_block_types and len(m_extract_image_block_types):
+        try:
+            extract_image_block_types = json.loads(m_extract_image_block_types[0])
+        except:
+            for block_type in m_extract_image_block_types:
+                if block_type.lower() not in ["image", "table"]:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid extract_image_block_types: {block_type}. Must be one of ['image', 'table']",
+                    )
+            extract_image_block_types = m_extract_image_block_types
+    else:
+        extract_image_block_types = None
+    
 
     extract_image_block_to_payload = bool(extract_image_block_types)
 
