@@ -36,15 +36,16 @@ RUN python3.10 -m pip install pip==22.2.1 \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache  -r requirements-base.txt' \ 
   && su -l ${NB_USER} -c 'pip3.10 uninstall --no-cache onnxruntime -y' \
   && su -l ${NB_USER} -c 'pip3.10 install --no-cache onnxruntime-gpu==1.15.0' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu==2.5.2' \
-  && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
   && dnf -y groupremove "Development Tools" \
   && dnf clean all \
   && ln -s /home/notebook-user/.local/bin/pip3.10 /usr/local/bin/pip3.10 || true
+  # && su -l ${NB_USER} -c 'pip3.10 install --no-cache paddlepaddle-gpu==2.5.2' \
+  # && su -l ${NB_USER} -c 'pip3.10 install --no-cache "unstructured.PaddleOCR"' \
+  
 
 
-RUN ln -s /usr/local/cuda-11.8/targets/x86_64-linux/lib/libcublas.so.11.11.3.6 /usr/lib/libcublas.so || true \
-  && ln -s /home/notebook-user/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8 /usr/lib/libcudnn.so || true
+# RUN ln -s /usr/local/cuda-11.8/targets/x86_64-linux/lib/libcublas.so.11.11.3.6 /usr/lib/libcublas.so || true \
+#   && ln -s /home/notebook-user/.local/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.8 /usr/lib/libcudnn.so || true
 
 
 USER ${NB_USER}
