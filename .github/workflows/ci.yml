@@ -81,15 +81,15 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - if: github.ref != 'refs/heads/main'
-        uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            src:
-              - 'doc_recipe/**'
-              - 'recipe-notebooks/**'
+    - uses: actions/checkout@v4
+    - if: github.ref != 'refs/heads/main'
+      uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          src:
+            - 'doc_recipe/**'
+            - 'recipe-notebooks/**'
 
       - if: steps.changes.outputs.src == 'true' && github.ref != 'refs/heads/main'
         uses: dangoslen/changelog-enforcer@v3

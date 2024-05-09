@@ -1,20 +1,21 @@
-from pathlib import Path
-import os
-
 import io
+import os
+import tempfile
+import time
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from unittest.mock import ANY, Mock
+
+import pandas as pd
 import pytest
 import requests
-import time
-import pandas as pd
-from concurrent.futures import ThreadPoolExecutor
-from fastapi.testclient import TestClient
 from fastapi import HTTPException
-from pypdf import PdfWriter, PdfReader
-from unittest.mock import Mock, ANY
+from fastapi.testclient import TestClient
+from pypdf import PdfReader, PdfWriter
 
-from prepline_general.api.app import app
 from prepline_general.api import general
-import tempfile
+from prepline_general.api.app import app
 
 MAIN_API_ROUTE = "general/v0/general"
 
@@ -140,7 +141,8 @@ def test_metadata_fields_removed():
         assert "detection_class_prob" not in response_without_coords[i]["metadata"]
 
 
-def test_ocr_languages_param():  # will eventually be depricated
+@pytest.mark.parametrize("ocr_languages", [["eng", "kor"], ["eng+kor"]])
+def test_ocr_languages_param(ocr_languages):  # will eventually be deprecated
     """
     Verify that we get the corresponding languages from the response with ocr_languages
     """
@@ -149,7 +151,7 @@ def test_ocr_languages_param():  # will eventually be depricated
     response = client.post(
         MAIN_API_ROUTE,
         files=[("files", (str(test_file), open(test_file, "rb")))],
-        data={"strategy": "ocr_only", "ocr_languages": ["eng", "kor"]},
+        data={"strategy": "ocr_only", "ocr_languages": ocr_languages},
     )
 
     assert response.status_code == 200
@@ -174,28 +176,8 @@ def test_languages_param():
     assert elements[3]["text"].startswith("안녕하세요, 저 희 는 YGEAS 그룹")
 
 
-def test_languages_and_ocr_languages_raises_error():
-    """
-    Verify that we get the corresponding languages from the response with `languages`
-    """
-    with pytest.raises(ValueError):
-        client = TestClient(app)
-        test_file = Path("sample-docs") / "english-and-korean.png"
-        client.post(
-            MAIN_API_ROUTE,
-            files=[("files", (str(test_file), open(test_file, "rb")))],
-            data={
-                "strategy": "ocr_only",
-                "languages": ["eng", "kor"],
-                "ocr_languages": ["eng", "kor"],
-            },
-        )
-
-
 def test_skip_infer_table_types_param():
-    """
-    Verify that we skip table instruction unless specified
-    """
+    """Verify that we extract table unless excluded by skip_infer_table_types"""
     client = TestClient(app)
     test_file = Path("sample-docs") / "layout-parser-paper-with-table.jpg"
     response = client.post(
@@ -207,19 +189,19 @@ def test_skip_infer_table_types_param():
     # test we skip table extraction by default
     elements = response.json()
     table = [el["metadata"]["text_as_html"] for el in elements if "text_as_html" in el["metadata"]]
-    assert len(table) == 0
+    assert len(table) == 1
 
     response = client.post(
         MAIN_API_ROUTE,
         files=[("files", (str(test_file), open(test_file, "rb")))],
-        data={"skip_infer_table_types": "['pdf']"},
+        data={"skip_infer_table_types": ["jpg"]},
     )
 
     assert response.status_code == 200
-    # test we didn't specify to skip table extration with image
+    # test we specified to skip extraction for jpg
     elements = response.json()
     table = [el["metadata"]["text_as_html"] for el in elements if "text_as_html" in el["metadata"]]
-    assert len(table) == 1
+    assert len(table) == 0
     # This text is not currently picked up
     # assert "Layouts of history Japanese documents" in table[0]
 
@@ -233,7 +215,7 @@ def test_strategy_param_400():
         files=[("files", (str(test_file), open(test_file, "rb"), "text/plain"))],
         data={"strategy": "not_a_strategy"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
 def test_valid_encoding_param():
@@ -330,6 +312,78 @@ def test_xml_keep_tags_param():
         assert element["text"].replace("&", "&amp;") in response_with_xml_tags["text"]
 
 
+def test_element_ids_unique_and_deterministic_by_default():
+    client = TestClient(app)
+
+    # This xml file contains duplicate text elements
+    test_file = Path("sample-docs") / "fake-xml.xml"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={},
+    )
+    assert response.status_code == 200
+
+    elements = response.json()
+    ids = [element["element_id"] for element in elements]
+
+    # If there are duplicate ids in the ids list, the count of resulting
+    # set will be lower than the count of ids
+    assert len(ids) == len(set(ids)), "Elements do not have unique ids"
+
+    expected_hashes = [
+        "0e0e3ceecc272305ff14af4c2fbf8ef7",
+        "ceaa4718ddf40162aafdf8c3ed34814a",
+        "c0bae0d8252610f0feddeeca7651788b",
+        "d5040a3e459502598199a640aa5e59d2",
+        "74054df9eb33cdde45981d5c76e70c45",
+        "81d74d759dd7b7b05db708390e7eedb8",
+        "a2846f501cd00d941b61686dd983d643",
+        "f6a475f24979daba2b907814b6c1ede7",
+        "00a33894b23223160b3fb564fde7d7be",
+        "a9df034d5bfee8873453ccb027a27bd6",
+        "bb5322c12f0331a5bfb5ea1cda64fcbc",
+        "4fce9662ee90d3ab8083cb811f09ae28",
+        "1558d7a0135725499f96bf81abe271d9",
+        "d09458fa64f67d1849b81d9e4ed88a39",
+        "69a118fc97ebbd1d2545faaa91ee59db",
+        "eb5fde2ae8d3d84808c81852e64114c3",
+        "0966f9e480789093095d3c82492d9137",
+        "c5e820fb11c36d5a989ef118862f3077",
+        "fbf71c3fcc7e64987e1085fecf17abbb",
+        "cf664bf47d676872da9bea30384a2c5e",
+    ]
+    assert ids == expected_hashes, "Element hashes are not deterministic"
+
+
+def test_unique_element_ids_param():
+    """
+    Verify that when requested, the element_ids are unique.
+    """
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "fake-xml.xml"
+
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={
+            "unique_element_ids": "True",
+        },
+    )
+    assert response.status_code == 200
+    elements = response.json()
+
+    ids = [element["element_id"] for element in elements]
+    # If all ids are unique, the count of resulting set
+    # will be same as the count of ids - which is expected here.
+    assert len(ids) == len(set(ids)), "Elements have non-unique ids"
+
+    try:
+        uuid.UUID(ids[0], version=4)
+    except ValueError:
+        raise AssertionError("Element ID is not in UUID format.")
+
+
 def test_include_page_breaks_param():
     """
     Verify that responses do not include page breaks unless requested
@@ -379,6 +433,51 @@ def test_include_page_breaks_param():
     ]
     assert last_response_with_page_breaks_element["type"] == "PageBreak"
     assert response_without_page_breaks[-1]["type"] != "PageBreak"
+
+
+@pytest.mark.parametrize(
+    "extract_image_block_types",
+    [
+        '["Image", "Table"]',
+        ["Image", "Table"],
+    ],
+)
+def test_include_extract_image_block_types_param(extract_image_block_types):
+    """
+    Verify that responses do not include base64 image in Table/Image metadata unless requested.
+    """
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "embedded-images-tables.pdf"
+    with open(test_file, "rb") as file:
+        response = client.post(
+            MAIN_API_ROUTE,
+            files=[("files", (str(test_file), file))],
+            data={"strategy": "hi_res"},
+        )
+
+    assert response.status_code == 200
+    response_without_image = response.json()
+
+    with open(test_file, "rb") as file:
+        response = client.post(
+            MAIN_API_ROUTE,
+            files=[("files", (str(test_file), file))],
+            data={"strategy": "hi_res", "extract_image_block_types": extract_image_block_types},
+        )
+
+    assert response.status_code == 200
+    response_with_image = response.json()
+
+    # Each element should be the same except for the image_base64 and image_mime_type fields
+    # in metadata
+    assert len(response_without_image) == len(response_with_image)
+    for element, element_with_image in zip(response_without_image, response_with_image):
+        if element["type"] in ["Image", "Table"]:
+            assert "image_base64" in element_with_image["metadata"]
+            assert "image_mime_type" in element_with_image["metadata"]
+            del element_with_image["metadata"]["image_base64"]
+            del element_with_image["metadata"]["image_mime_type"]
+            assert element == element_with_image
 
 
 @pytest.mark.parametrize(
@@ -476,6 +575,72 @@ class MockResponse:
         return self.body
 
 
+def call_api_using_test_client(
+    request_url: str,
+    api_key: str,
+    filename: str,
+    file,
+    content_type: str,
+    client: TestClient,
+    **partition_kwargs,
+) -> str:
+    """Exact copy of call_api from call_api.py, but with the test client parameter added."""
+    headers = {"unstructured-api-key": api_key}
+
+    response = client.post(
+        MAIN_API_ROUTE,
+        files={"files": (filename, file, content_type)},
+        data=partition_kwargs,
+        headers=headers,
+    )
+
+    if response.status_code != 200:
+        detail = response.json().get("detail") or response.text
+        raise HTTPException(status_code=response.status_code, detail=detail)
+
+    return response.text
+
+
+def test_parallel_mode_preserves_uniqueness_of_hashes_when_assembling_pages_splits(monkeypatch):
+    monkeypatch.setenv("UNSTRUCTURED_PARALLEL_MODE_URL", "unused")
+    monkeypatch.setenv("UNSTRUCTURED_PARALLEL_MODE_ENABLED", "true")
+    monkeypatch.setenv("UNSTRUCTURED_PARALLEL_MODE_SPLIT_SIZE", "1")
+
+    client = TestClient(app)
+    monkeypatch.setattr(
+        general,
+        "call_api",
+        lambda *args, **kwargs: call_api_using_test_client(*args, client=client, **kwargs),
+    )
+
+    # -- there are 3 pages identical pages in this pdf --
+    test_file = Path("sample-docs") / "DA-1p-with-duplicate-pages.pdf"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb"), "application/pdf"))],
+        data={},
+    )
+
+    assert response.status_code == 200
+
+    elements = response.json()
+    texts = [element.get("text") for element in elements]
+
+    num_pages = 3
+    num_elements_per_page = len(elements) // num_pages
+
+    def get_texts_on_page(texts, page_num):
+        start = page_num * num_elements_per_page
+        end = start + num_elements_per_page
+        return texts[start:end]
+
+    pages = [get_texts_on_page(texts, idx) for idx in range(num_pages)]
+    assert all(page == pages[0] for page in pages), "Texts on all pages should be identical."
+
+    ids = [element.get("element_id") for element in elements]
+    assert len(set(ids)) == len(ids), "Element IDs across all pages should be unique."
+
+
 def test_parallel_mode_passes_params(monkeypatch):
     """
     Verify that parallel mode passes all params correctly into local partition.
@@ -505,18 +670,22 @@ def test_parallel_mode_passes_params(monkeypatch):
         data={
             "encoding": "foo",
             "hi_res_model_name": "yolox",
-            "include_page_breaks": True,
-            # "ocr_languages": "foo",
+            "include_page_breaks": "True",
             "languages": "foo",
-            "pdf_infer_table_structure": True,
+            "pdf_infer_table_structure": "True",
             "strategy": "hi_res",
-            "xml_keep_tags": True,
+            "xml_keep_tags": "True",
             "skip_infer_table_types": "foo",
+            "unique_element_ids": "True",
+            "starting_page_number": 1,
+            # -- chunking options --
             "chunking_strategy": "by_title",
-            "multipage_sections": False,
-            "combine_under_n_chars": 501,
-            "new_after_n_chars": 1501,
-            "max_characters": 1502,
+            "combine_under_n_chars": "501",
+            "max_characters": "1502",
+            "multipage_sections": "False",
+            "new_after_n_chars": "1501",
+            "overlap": "25",
+            "overlap_all": "true",
         },
     )
 
@@ -534,14 +703,19 @@ def test_parallel_mode_passes_params(monkeypatch):
         pdf_infer_table_structure=True,
         strategy="hi_res",
         xml_keep_tags=True,
-        skip_infer_table_types="foo",
-        chunking_strategy="by_title",
-        multipage_sections=False,
-        combine_text_under_n_chars=501,
-        new_after_n_chars=1501,
-        max_characters=1502,
+        skip_infer_table_types=["foo"],
         extract_image_block_types=None,
         extract_image_block_to_payload=False,
+        unique_element_ids=True,
+        starting_page_number=1,
+        # -- chunking options --
+        chunking_strategy="by_title",
+        combine_text_under_n_chars=501,
+        max_characters=1502,
+        multipage_sections=False,
+        new_after_n_chars=1501,
+        overlap=25,
+        overlap_all=True,
     )
 
 
@@ -686,14 +860,17 @@ def test_chunking_strategy_param():
 @pytest.mark.parametrize(
     ("multipage_sections", "combine_under_n_chars", "new_after_n_chars", "max_characters"),
     [
-        (False, None, None, 500),  # test multipage_sections
+        (False, None, None, 600),  # test multipage_sections
         (True, 1000, None, 5000),  # test combine_under_n_chars
         (True, None, 10, 500),  # test new_after_n_chars
         (True, None, None, 100),  # test max__characters
     ],
 )
 def test_chunking_strategy_additional_params(
-    multipage_sections, combine_under_n_chars, new_after_n_chars, max_characters
+    multipage_sections: bool,
+    combine_under_n_chars: int,
+    new_after_n_chars: int,
+    max_characters: int,
 ):
     client = TestClient(app)
     test_file = Path("sample-docs") / "layout-parser-paper-fast.pdf"
@@ -925,3 +1102,32 @@ def test_get_request():
     response = client.get("/general/v0/general")
     assert response.status_code == 405
     assert response.json() == {"detail": "Only POST requests are supported."}
+
+
+def test_output_format_csv():
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "family-day.eml"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={"output_format": "text/csv"},
+    )
+    assert response.status_code == 200
+    df = pd.read_csv(io.StringIO(response.text))
+    assert len(df) == 9
+    assert df["text"][3] == "Make sure to RSVP!"
+
+
+def test_output_format_csv_ignore_specified_accept_header():
+    client = TestClient(app)
+    test_file = Path("sample-docs") / "family-day.eml"
+    response = client.post(
+        MAIN_API_ROUTE,
+        files=[("files", (str(test_file), open(test_file, "rb")))],
+        data={"output_format": "text/csv"},
+        headers={"accept": "application/json"},
+    )
+    assert response.status_code == 200
+    df = pd.read_csv(io.StringIO(response.text))
+    assert len(df) == 9
+    assert df["text"][3] == "Make sure to RSVP!"

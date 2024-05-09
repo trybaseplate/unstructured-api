@@ -13,7 +13,17 @@ We are thrilled to announce our newly launched [Unstructured API](https://unstru
 We are releasing the beta version of our Chipper model to deliver superior performance when processing high-resolution, complex documents. To start using the Chipper model in your API request, you can utilize the `hi_res` strategy. Please refer to the documentation [here](https://unstructured-io.github.io/unstructured/api.html#strategies).
 
 As the Chipper model is in beta version, we welcome feedback and suggestions. For those interested in testing the Chipper model, we encourage you to connect with us on [Slack community](https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-1x7cgo0pg-PTptXWylzPQF9xZolzCnwQ).
-  
+
+<div align="center">
+
+ <a
+   href="https://www.phorm.ai/query?projectId=34efc517-2201-4376-af43-40c4b9da3dc5">
+	<img src="https://img.shields.io/badge/Phorm-Ask_AI-%23F2777A.svg?&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNSIgaGVpZ2h0PSI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwYXRoIGQ9Ik00LjQzIDEuODgyYTEuNDQgMS40NCAwIDAgMS0uMDk4LjQyNmMtLjA1LjEyMy0uMTE1LjIzLS4xOTIuMzIyLS4wNzUuMDktLjE2LjE2NS0uMjU1LjIyNmExLjM1MyAxLjM1MyAwIDAgMS0uNTk1LjIxMmMtLjA5OS4wMTItLjE5Mi4wMTQtLjI3OS4wMDZsLTEuNTkzLS4xNHYtLjQwNmgxLjY1OGMuMDkuMDAxLjE3LS4xNjkuMjQ2LS4xOTFhLjYwMy42MDMgMCAwIDAgLjItLjEwNi41MjkuNTI5IDAgMCAwIC4xMzgtLjE3LjY1NC42NTQgMCAwIDAgLjA2NS0uMjRsLjAyOC0uMzJhLjkzLjkzIDAgMCAwLS4wMzYtLjI0OS41NjcuNTY3IDAgMCAwLS4xMDMtLjIuNTAyLjUwMiAwIDAgMC0uMTY4LS4xMzguNjA4LjYwOCAwIDAgMC0uMjQtLjA2N0wyLjQzNy43MjkgMS42MjUuNjcxYS4zMjIuMzIyIDAgMCAwLS4yMzIuMDU4LjM3NS4zNzUgMCAwIDAtLjExNi4yMzJsLS4xMTYgMS40NS0uMDU4LjY5Ny0uMDU4Ljc1NEwuNzA1IDRsLS4zNTctLjA3OUwuNjAyLjkwNkMuNjE3LjcyNi42NjMuNTc0LjczOS40NTRhLjk1OC45NTggMCAwIDEgLjI3NC0uMjg1Ljk3MS45NzEgMCAwIDEgLjMzNy0uMTRjLjExOS0uMDI2LjIyNy0uMDM0LjMyNS0uMDI2TDMuMjMyLjE2Yy4xNTkuMDE0LjMzNi4wMy40NTkuMDgyYTEuMTczIDEuMTczIDAgMCAxIC41NDUuNDQ3Yy4wNi4wOTQuMTA5LjE5Mi4xNDQuMjkzYTEuMzkyIDEuMzkyIDAgMCAxIC4wNzguNThsLS4wMjkuMzJaIiBmaWxsPSIjRjI3NzdBIi8+CiAgPHBhdGggZD0iTTQuMDgyIDIuMDA3YTEuNDU1IDEuNDU1IDAgMCAxLS4wOTguNDI3Yy0uMDUuMTI0LS4xMTQuMjMyLS4xOTIuMzI0YTEuMTMgMS4xMyAwIDAgMS0uMjU0LjIyNyAxLjM1MyAxLjM1MyAwIDAgMS0uNTk1LjIxNGMtLjEuMDEyLS4xOTMuMDE0LS4yOC4wMDZsLTEuNTYtLjEwOC4wMzQtLjQwNi4wMy0uMzQ4IDEuNTU5LjE1NGMuMDkgMCAuMTczLS4wMS4yNDgtLjAzM2EuNjAzLjYwMyAwIDAgMCAuMi0uMTA2LjUzMi41MzIgMCAwIDAgLjEzOS0uMTcyLjY2LjY2IDAgMCAwIC4wNjQtLjI0MWwuMDI5LS4zMjFhLjk0Ljk0IDAgMCAwLS4wMzYtLjI1LjU3LjU3IDAgMCAwLS4xMDMtLjIwMi41MDIuNTAyIDAgMCAwLS4xNjgtLjEzOC42MDUuNjA1IDAgMCAwLS4yNC0uMDY3TDEuMjczLjgyN2MtLjA5NC0uMDA4LS4xNjguMDEtLjIyMS4wNTUtLjA1My4wNDUtLjA4NC4xMTQtLjA5Mi4yMDZMLjcwNSA0IDAgMy45MzhsLjI1NS0yLjkxMUExLjAxIDEuMDEgMCAwIDEgLjM5My41NzIuOTYyLjk2MiAwIDAgMSAuNjY2LjI4NmEuOTcuOTcgMCAwIDEgLjMzOC0uMTRDMS4xMjIuMTIgMS4yMy4xMSAxLjMyOC4xMTlsMS41OTMuMTRjLjE2LjAxNC4zLjA0Ny40MjMuMWExLjE3IDEuMTcgMCAwIDEgLjU0NS40NDhjLjA2MS4wOTUuMTA5LjE5My4xNDQuMjk1YTEuNDA2IDEuNDA2IDAgMCAxIC4wNzcuNTgzbC0uMDI4LjMyMloiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQuMDgyIDIuMDA3YTEuNDU1IDEuNDU1IDAgMCAxLS4wOTguNDI3Yy0uMDUuMTI0LS4xMTQuMjMyLS4xOTIuMzI0YTEuMTMgMS4xMyAwIDAgMS0uMjU0LjIyNyAxLjM1MyAxLjM1MyAwIDAgMS0uNTk1LjIxNGMtLjEuMDEyLS4xOTMuMDE0LS4yOC4wMDZsLTEuNTYtLjEwOC4wMzQtLjQwNi4wMy0uMzQ4IDEuNTU5LjE1NGMuMDkgMCAuMTczLS4wMS4yNDgtLjAzM2EuNjAzLjYwMyAwIDAgMCAuMi0uMTA2LjUzMi41MzIgMCAwIDAgLjEzOS0uMTcyLjY2LjY2IDAgMCAwIC4wNjQtLjI0MWwuMDI5LS4zMjFhLjk0Ljk0IDAgMCAwLS4wMzYtLjI1LjU3LjU3IDAgMCAwLS4xMDMtLjIwMi41MDIuNTAyIDAgMCAwLS4xNjgtLjEzOC42MDUuNjA1IDAgMCAwLS4yNC0uMDY3TDEuMjczLjgyN2MtLjA5NC0uMDA4LS4xNjguMDEtLjIyMS4wNTUtLjA1My4wNDUtLjA4NC4xMTQtLjA5Mi4yMDZMLjcwNSA0IDAgMy45MzhsLjI1NS0yLjkxMUExLjAxIDEuMDEgMCAwIDEgLjM5My41NzIuOTYyLjk2MiAwIDAgMSAuNjY2LjI4NmEuOTcuOTcgMCAwIDEgLjMzOC0uMTRDMS4xMjIuMTIgMS4yMy4xMSAxLjMyOC4xMTlsMS41OTMuMTRjLjE2LjAxNC4zLjA0Ny40MjMuMWExLjE3IDEuMTcgMCAwIDEgLjU0NS40NDhjLjA2MS4wOTUuMTA5LjE5My4xNDQuMjk1YTEuNDA2IDEuNDA2IDAgMCAxIC4wNzcuNTgzbC0uMDI4LjMyMloiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=" />
+   </a>
+
+</div>
+
+
 ---
 
 <h3 align="center">
@@ -40,7 +50,7 @@ Try our hosted API! It's freely available to use with any of the filetypes liste
   'https://api.unstructured.io/general/v0/general' \
   -H 'accept: application/json' \
   -H 'Content-Type: multipart/form-data' \
-  -H 'unstructured-api-key: <YOUR API KEY>'
+  -H 'unstructured-api-key: <YOUR API KEY>' \
   -F 'files=@sample-docs/family-day.eml' \
   | jq -C . | less -R
 ```
@@ -131,25 +141,10 @@ When elements are extracted from PDFs or images, it may be useful to get their b
   | jq -C . | less -R
 ```
 
-#### PDF Table Extraction
-
-To extract the table structure from PDF files using the `hi_res` strategy, ensure that the `pdf_infer_table_structure` parameter is set to `true`. This setting includes the table's text content in the response. By default, this parameter is set to `false` to avoid the expensive reading process.
-
-```
- curl -X 'POST' \
-  'https://api.unstructured.io/general/v0/general' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'files=@sample-docs/layout-parser-paper.pdf' \
-  -F 'strategy=hi_res' \
-  -F 'pdf_infer_table_structure=true' \
-  | jq -C . | less -R
-```
-
 #### Skip Table Extraction
 
-Currently, we provide support for enabling and disabling table extraction for file types other than PDF files. Set parameter `skip_infer_table_types` to specify the document types that you want to skip table extraction with. By default, we skip table extraction
-for PDFs and Images, which are `pdf`, `jpg` and `png`. Again, please note that table extraction only works with `hi_res` strategy. For example, if you don't want to skip table extraction for images, you can pass an empty value to `skip_infer_table_types` with:
+Currently, we provide support for enabling and disabling table extraction for all file types. Set parameter `skip_infer_table_types` to specify the document types that you want to skip table extraction with. By default, we enable table extraction
+for all file types (`skip_infer_table_types=[]`). Again, please note that table extraction only works with `hi_res` strategy. For example, if you want to skip table extraction for images, you can pass a list with matching image file types:
 
 ```
  curl -X 'POST' \
@@ -158,7 +153,7 @@ for PDFs and Images, which are `pdf`, `jpg` and `png`. Again, please note that t
   -H 'Content-Type: multipart/form-data' \
   -F 'files=@sample-docs/layout-parser-paper-with-table.jpg' \
   -F 'strategy=hi_res' \
-  -F 'skip_infer_table_types=[]' \
+  -F 'skip_infer_table_types=["jpg"]' \
   | jq -C . | less -R
 ```
 
@@ -167,7 +162,7 @@ for PDFs and Images, which are `pdf`, `jpg` and `png`. Again, please note that t
 You can specify the encoding to use to decode the text input. If no value is provided, utf-8 will be used.
 
 ```
-curl -X 'POST' 
+curl -X 'POST' \
  'https://api.unstructured.io/general/v0/general' \
  -H 'accept: application/json'  \
  -H 'Content-Type: multipart/form-data' \
@@ -176,12 +171,29 @@ curl -X 'POST'
  | jq -C . | less -R
 ```
 
+#### Gzipped files
+
+You can send gzipped file and api will un-gzip it. 
+
+```
+curl -X 'POST' \
+ 'https://api.unstructured.io/general/v0/general' \
+ -H 'accept: application/json'  \
+ -H 'Content-Type: multipart/form-data' \
+ -F 'gz_uncompressed_content_type=application/pdf' \
+ -F 'files=@sample-docs/layout-parser-paper.pdf.gz' 
+```
+
+If field `gz_uncompressed_content_type` is set, the API will use its value as content-type of all files
+after uncompressing the .gz files that are sent in single batch. If not set, the API will use
+various heuristics to detect the filetypes after uncompressing from .gz.
+
 #### XML Tags
 
 When processing XML documents, set the `xml_keep_tags` parameter to `true` to retain the XML tags in the output. If not specified, it will simply extract the text from within the tags.
 
 ```
-curl -X 'POST' 
+curl -X 'POST' \
  'https://api.unstructured.io/general/v0/general' \
  -H 'accept: application/json'  \
  -H 'Content-Type: multipart/form-data' \
@@ -195,7 +207,7 @@ curl -X 'POST'
 For supported filetypes, set the `include_page_breaks` parameter to `true` to include `PageBreak` elements in the output.
 
 ```
-curl -X 'POST' 
+curl -X 'POST' \
  'https://api.unstructured.io/general/v0/general' \
  -H 'accept: application/json'  \
  -H 'Content-Type: multipart/form-data' \
@@ -205,24 +217,62 @@ curl -X 'POST'
 ```
 
 
+#### Unique element IDs
+
+By default, the element ID is a SHA-256 hash of the element text. This is to ensure that
+the ID is deterministic. One downside is that the ID is not guaranteed to be unique.
+Different elements with the same text will have the same ID, and there could also be hash collisions.
+To use UUIDs in the output instead, set ``unique_element_ids=true``. Note: this means that the element IDs
+will be random, so with every partition of the same file, you will get different IDs. 
+This can be helpful if you'd like to use the IDs as a primary key in a database, for example.
+
+```
+curl -X 'POST' \ 
+ 'https://api.unstructured.io/general/v0/general' \
+ -H 'accept: application/json'  \
+ -H 'Content-Type: multipart/form-data' \
+ -F 'files=@sample-docs/layout-parser-paper-fast.pdf' \
+ -F 'unique_element_ids=true' \
+ | jq -C . | less -R
+```
+
+
 #### Chunking Elements
 
-Set the `chunking_strategy` to chunk text into larger or smaller elements. Defaults to `None` with optional arg of `by_title`.
+Use the `chunking_strategy` form-field to chunk text into larger or smaller elements. Defaults to `None` which performs no chunking. The available chunking strategies are `basic` and `by_title`.
 
-  Additional Parameters:
+The `basic` strategy combines whole consecutive document elements to maximally fill chunks of `max_characters` length. A single element that by itself exceeds `max_characters` is divided into two or more chunks by text-splitting (on a word boundary).
 
-    `multipage_sections`
-      If True, sections can span multiple pages. Defaults to True.
+The `by_title` strategy has the same behaviors except document section boundaries are respected, meaning elements from two different sections never occur in the same chunk. A `Title` (section heading) element introduces a new section, hence the name.
 
-    `combine_under_n_chars`
-      Combines elements (for example a series of titles) until a section
-      reaches a length of n characters. Defaults to 500.
-
-    `new_after_n_chars`
-      Cuts off new sections once they reach a length of "n" characters (soft max). Defaults to 1500.
+  Additional Parameters (all optional):
 
     `max_characters`
-      Cuts off new sections once they reach a length of "n" characters (hard max). Defaults to 1500.
+      The hard maximum chunk size. No chunk will exceed this length. Defaults to 500.
+
+    `new_after_n_chars`
+      A chunk of this length or greater is considered "full" and will not receive an additional element, even if it would fit within `max_characters`.
+      This "soft-maximum" defaults to `max_characters`.
+
+    `overlap`
+      Specifies the length of a string ("tail") to be drawn from each chunk and prefixed to the
+      next chunk as a context-preserving mechanism. By default, this only applies to split-chunks
+      where an oversized element is divided into multiple chunks by text-splitting.
+
+    `overlap_all`
+      Default: `False`. When `True`, apply overlap between "normal" chunks formed from whole
+      elements and not subject to text-splitting. Use this with caution as it entails a certain
+      level of "pollution" of otherwise clean semantic chunk boundaries.
+
+    `combine_under_n_chars`
+      Combines elements (for example a series of titles) until a section reaches a
+      length of n characters. Defaults to 500. Only operative for the "by_title"
+      strategy.
+
+    `multipage_sections`
+      If True, sections can span multiple pages. Defaults to True. Only operative for
+      the "by_title" strategy.
+
 
 ```
 curl -X 'POST' 
@@ -304,14 +354,15 @@ The output format can also be set to `text/csv` to get the data in csv format ra
 
 The response will be a list of the extracted elements in csv format:
 ```
-"type,text,element_id,filename,page_number,url,sent_from,sent_to,subject,sender\n
-UncategorizedText,\"Hi,\",bc50944723f014607ad612b6983944a7,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-NarrativeText,\"It has come to our attention that as of 9:00am this morning, Harold's lunch is missing. If this was done in error please return the lunch immediately to the fridge on the 2nd floor by noon.\",51944d1f63f9472edb165fb3c9e5c525,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-NarrativeText,\"If the lunch has not been returned by noon, we will be reviewing camera footage to determine who stole Harold's lunch.\",8e8f9e2e50e39e072fda08d277aa77b9,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-NarrativeText,The perpetrators will be PUNISHED to the full extent of our employee code of conduct handbook.,736a826679b971f594103fd9751e5c8f,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-UncategorizedText,\"Thank you for your time,\",3eeae5f64dab54c52dd5fff779808071,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-Title,Unstructured Technologies,d5b612de8cd918addd9569b0255b65b2,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n
-Title,Data Scientist,46b174f1ec7c25d23e5e50ffff0cc55b,alert.eml,1,,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],ALERT: Stolen Lunch,Mallori Harrell <mallori@unstructured.io>\n"
+type,element_id,text,filename,sent_from,sent_to,subject,languages,filetype
+UncategorizedText,db1ca22813f01feda8759ff04a844e56,"Hi All,",family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+NarrativeText,a663c393a5e143c01ef2bb5c98efa2c1,Get excited for our first annual family day! ,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+NarrativeText,ce65ca3bef59957d3f1c2bab5725c82f,"There will be face painting, a petting zoo, funnel cake and more.",family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+NarrativeText,d7bcf988af9f06042d83e25c531e5744,Make sure to RSVP!,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+Title,5550577db69c2c8aabcd90979698120a,Best.,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+Title,ca1c571d993b6c1ed8ef56a06c16ba22,Mallori Harrell,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+Title,d5b612de8cd918addd9569b0255b65b2,Unstructured Technologies,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
+Title,2e0b9e8ee04b9594a9c26d8535b818ff,Data Scientist,family-day.eml,['Mallori Harrell <mallori@unstructured.io>'],['Mallori Harrell <mallori@unstructured.io>'],Family Day,['eng'],message/rfc822
 ```
 
 #### Parallel Mode for PDFs
@@ -323,11 +374,22 @@ As mentioned above, processing a pdf using `hi_res` is currently a slow operatio
 * `UNSTRUCTURED_PARALLEL_MODE_SPLIT_SIZE` - the number of pages to be processed in one request, default is `1`.
 * `UNSTRUCTURED_PARALLEL_RETRY_ATTEMPTS` - the number of retry attempts on a retryable error, default is `2`. (i.e. 3 attempts are made in total)
 
+Due to the overhead associated with file splitting, parallel processing mode is only recommended for the `hi_res` strategy. Additionally users of the official [Python client](https://github.com/Unstructured-IO/unstructured-python-client?tab=readme-ov-file#splitting-pdf-by-pages) can enable client-side splitting by setting `split_pdf_page=True`.
+
 #### Security
 You may also set the optional `UNSTRUCTURED_API_KEY` env variable to enable request validation for your self-hosted instance of Unstructured. If set, only requests including an `unstructured-api-key` header with the same value will be fulfilled. Otherwise, the server will return a 401 indicating that the request is unauthorized.
 
 #### Controlling Server Load
-Some documents will use a lot of memory as they're being processed. To mitigate OOM errors, the server will return a 503 if the host's available memory drops below 2GB. This is configurable with `UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB`.
+Some documents will use a lot of memory as they're being processed. To mitigate OOM errors, the server will return a 503 if the host's available memory drops below 2GB. This is configured with the environment variable `UNSTRUCTURED_MEMORY_FREE_MINIMUM_MB`, which defaults to 2048. You can lower this value to reduce these messages, that is, allow the server to use more memory. Otherwise, you can set to 0 to fully remove this check.
+
+#### Controlling server life time
+By default server will run for indefinitely. To change that the `MAX_LIFETIME_SECONDS` environmental variable can be set. If server is run with this variable set, it will enter a graceful shutdown period after `MAX_LIFETIME_SECONDS` from its initialization. Graceful shutdown period lasts for up to 3600 seconds and during it:
+- server denies any new requests - they're met with an empty response,
+- server continues processing active requests and shuts down (ending graceful period) if all of them are processed.
+
+After the graceful period is over if server is still running, it is shutdown forcefully, cancelling all active requests and sending empty responses to each of them.
+
+*Max lifetime requires gnu [timeout](https://www.gnu.org/software/coreutils/manual/html_node/timeout-invocation.html#timeout-invocation) to be installed, available by default on most linux systems. Downloadable on MacOS as gtimeout with gnu coreutils.*
 
 ## :dizzy: Instructions for using the Docker image
 
@@ -345,7 +407,13 @@ docker pull downloads.unstructured.io/unstructured-io/unstructured-api:latest
 Once pulled, you can launch the container as a web app on localhost:8000.
 
 ```bash
-docker run -p 8000:8000 -d --rm --name unstructured-api downloads.unstructured.io/unstructured-io/unstructured-api:latest --port 8000 --host 0.0.0.0
+docker run -p 8000:8000 -d --rm --name unstructured-api downloads.unstructured.io/unstructured-io/unstructured-api:latest
+```
+
+You can pass in a PORT variable to run the server on a different port in the container.
+
+```bash
+docker run -p 9500:9500 -d --rm --name unstructured-api -e PORT=9500 downloads.unstructured.io/unstructured-io/unstructured-api:latest
 ```
 
 ## Security Policy
